@@ -1,57 +1,50 @@
 """ In Memory DAO """
 
 from typing import Callable
+from collections import namedtuple
 
-from treelib import Tree
+from treelib import Tree, Node
 
-from cahier.interfaces.assetdao import ReadAllOptions, JsonReponse
-from cahier.schemas.schemas import InputObj, Obj, ObjEnum, WebId
+from am.daos.inmemory.db import Tree
+from am.interfaces import JsonReponse, ReadAllOptions
+from am.schemas.schemas import InputObj, Obj, ObjEnum, WebId
 
 ################################################################################
 
-def filter_children(node , children: ObjEnum):
-    
-    objs_list: list[Obj] = [n.data for n in node.children]
-    return [o for o in objs_list if o.cls_name() == children.name]
+DataNode = namedtuple('DataNode', ['objtype', 'obj'])
 
 class InMemoryDAO:
 
     def __init__(self, get_db: Callable[[], Tree]) -> None:
         self.get_db = get_db
-    def read(self, 
-            webid: WebId, 
-            selected_fields: tuple[str] | None = None
-            ) -> JsonReponse:
+
+    def read(self, webid: WebId | str) -> Obj:
         """"""
-        
         tree = self.get_db()
-        print('****************************', tree)
-        
-        node = tree.get_node(webid)
+        node: Node | None = tree.get_node(webid)
         if node:
-            return node.data
+            return node.data.obj
         raise Exception()
 
-    def list(
-        self,
-        parent: ObjEnum,
-        children: ObjEnum,
-        webid: WebId,
-        options: ReadAllOptions,
-    ) -> list[JsonReponse] | JsonReponse:
+    def list(self, webid: WebId | str, children: ObjEnum) -> tuple[Obj, ...]:
         """"""
-        
         tree = self.get_db()
-        node = tree.get_node(webid)
-        if node:
-            return filter_children(node, children)  # ... filtrar os types de children
-        raise Exception()
+        treenodes: list[Node] | None = tree.children(webid)
+        if treenodes is None:
+            raise Exception()
+        nodes = [node.data for node in treenodes]
+        return tuple([
+            data.obj for data in nodes if data.objtype == children
+        ])
 
-    def create(
-        self, parent: ObjEnum, children: ObjEnum, webid: WebId, obj: InputObj
-    ) -> None:
+    def create(self, webid: WebId | str, obj_type: ObjEnum, obj: Obj) -> WebId:
         """"""
 
         tree = self.get_db()
-        obj_ = Obj(obj)
-        tree.create_node(tag=obj_.name, identifier=obj_.webid, data=obj_)
+        tree.create_node(
+            tag=obj.name,
+            identifier=obj.webid,
+            parent=webid,
+            data= DataNode(objtype=obj_type, obj=obj)
+        )
+        return obj.webid

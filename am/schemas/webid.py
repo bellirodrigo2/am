@@ -16,7 +16,8 @@ WebId = UUID
 def make_webid() -> WebId:
     return uuid1()
 
-def webid_from_string(webid: str)->WebId:
+
+def webid_from_string(webid: str) -> WebId:
     return UUID(webid, version=1)
 
 

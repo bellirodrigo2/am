@@ -1,19 +1,20 @@
 """ Asset Manager Service """
 
+from am.exceptions import AMValidationError, AssetHierarchyError, WebIdValidationError
 from am.interfaces import AssetDAOInterface, JsonReponse, ReadAllOptions
-from am.exceptions import AssetHierarchyError, WebIdValidationError, AMValidationError
 from am.schemas.schemas import (
     InputObj,
     Obj,
     ObjEnum,
+    ValidationError,
     WebId,
-    is_valid_parent,
     is_valid_obj,
+    is_valid_parent,
     webid_from_string,
-    ValidationError
 )
 
 ###############################################################################
+
 
 def check_hierarchy(parent: ObjEnum, children: ObjEnum):
     if is_valid_parent(parent, children) is False:
@@ -45,7 +46,7 @@ class AssetService:
     ) -> None:
         self.__dao = dao
 
-    def _add_one(self, webid: WebId, obj: Obj) -> WebId:
+    def _add_one(self, webid: WebId, obj_type: ObjEnum, obj: Obj) -> WebId:
         return self.__dao.create(webid=webid, obj=obj)
 
     def _get_one(
@@ -71,7 +72,7 @@ class AssetService:
             raise WebIdValidationError()
 
         obj: Obj = self._get_one(webid=id, selected_fields=selected_fields)
-        
+
         # if obj does not comply with the target pydantic model target Pydantic model,
         # an ValidationError is raised
         try:
@@ -110,9 +111,7 @@ class AssetService:
 
         # if parent/children is valid, and parent obj is the rigth type,
         # the _get_all() results type should be consistent
-        objs: tuple[Obj, ...] = self._get_all(
-            webid=id, child=children, options=options
-        )
+        objs: tuple[Obj, ...] = self._get_all(webid=id, child=children, options=options)
         selected_fields = options.selected_fields if options else None
         filtereds: tuple[JsonReponse, ...] = tuple(
             [filter_response(obj.model_dump(), selected_fields) for obj in objs]
@@ -137,7 +136,7 @@ class AssetService:
 
         obj = Obj(**inputobj.model_dump())
 
-        return self._add_one(webid=id, obj=obj)
+        return self._add_one(webid=id, obj_type=children, obj=obj)
 
 
 if __name__ == "__main__":

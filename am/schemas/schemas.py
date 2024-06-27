@@ -193,5 +193,6 @@ ObjEnum: Type[EnumInputObj] = make_enum(InputObj, EnumInputObj)
 def is_valid_parent(parent: EnumInputObj, child: EnumInputObj):
     return child.base_type in parent.children
 
+
 def is_valid_obj(target: ObjEnum, obj: InputObj):
     pass

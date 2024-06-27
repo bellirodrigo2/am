@@ -78,22 +78,15 @@ class AssetInterface(Protocol):
 
 class AssetDAOInterface(Protocol):
 
-    def read(
-        self, webid: WebId | str, selected_fields: tuple[str, ...] | None = None
-    ) -> Obj:
+    def read(self, webid: WebId | str) -> Obj:
         """"""
         pass
 
-    def list(
-        self,
-        webid: WebId | str,
-        children: ObjEnum,
-        options: ReadAllOptions | None,
-    ) -> tuple[Obj, ...]:
+    def list(self, webid: WebId | str, children: ObjEnum) -> tuple[Obj, ...]:
         """"""
         pass
 
-    def create(self, webid: WebId | str, obj: Obj) -> WebId:
+    def create(self, webid: WebId | str, obj_type: ObjEnum, obj: Obj) -> WebId:
         """"""
         pass
 
