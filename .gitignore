@@ -1,0 +1,17 @@
+#python cache
+**/__pycache__/
+
+# pytest
+.pytest_cache/
+
+#ruff 
+.ruff_cache/
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+#ide´s
+.idea/
+.vscode/
