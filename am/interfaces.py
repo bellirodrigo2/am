@@ -8,7 +8,7 @@ from pydantic.alias_generators import to_camel
 
 from am.schemas.schemas import InputObj, Obj, ObjEnum, WebId
 
-################################################################################
+###############################################################################
 
 
 class SortOrder(Enum):
@@ -21,7 +21,9 @@ class ReadAllOptions(BaseModel):
 
     model_config = ConfigDict(
         alias_generator=AliasGenerator(
-            alias=to_camel, validation_alias=to_camel, serialization_alias=to_camel
+            alias=to_camel,
+            validation_alias=to_camel,
+            serialization_alias=to_camel
         ),
         populate_by_name=True,
         use_enum_values=True,
@@ -42,7 +44,7 @@ class ReadAllOptions(BaseModel):
 
 JsonReponse = dict[str, Any]
 
-################################################################################
+###############################################################################
 
 
 class AssetInterface(Protocol):
@@ -73,7 +75,7 @@ class AssetInterface(Protocol):
         pass
 
 
-################################################################################
+###############################################################################
 
 
 class AssetDAOInterface(Protocol):

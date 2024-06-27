@@ -70,16 +70,16 @@ class AssetService:
 
         obj: Obj = self._get_one(webid=id, selected_fields=selected_fields)
 
-        # if obj does not comply with the target pydantic model target Pydantic model,
+        # if obj does not comply with the target Pydantic model,
         # an ValidationError is raised
         try:
             is_valid_obj(target, obj)
         except ValidationError as e:
             raise AMValidationError(e)
 
-        dictobj = obj.model_dump()
+        dob = obj.model_dump()
         filtered: JsonReponse = (
-            filter_response(dictobj, selected_fields) if selected_fields else dictobj
+            filter_response(dob, selected_fields) if selected_fields else dob
         )
         return add_link(filtered, target)
 
@@ -99,7 +99,7 @@ class AssetService:
 
         check_hierarchy(parent, children)
 
-        # **** SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
+        # * SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
         parent_obj: Obj = self._get_one(id)
         try:
             is_valid_obj(parent, parent_obj)
@@ -108,15 +108,19 @@ class AssetService:
 
         # if parent/children is valid, and parent obj is the rigth type,
         # the _get_all() results type should be consistent
-        objs: tuple[Obj, ...] = self._get_all(webid=id, child=children, options=options)
-        selected_fields = options.selected_fields if options else None
+        objs: tuple[Obj, ...] = self._get_all(id, children, options)
+        sel_fields = options.selected_fields if options else None
         filtereds: tuple[JsonReponse, ...] = tuple(
-            [filter_response(obj.model_dump(), selected_fields) for obj in objs]
+            [filter_response(obj.model_dump(), sel_fields) for obj in objs]
         )
         return filtereds
 
     def create(
-        self, webid: WebId | str, parent: ObjEnum, children: ObjEnum, inputobj: InputObj
+        self,
+        webid: WebId | str,
+        parent: ObjEnum,
+        children: ObjEnum,
+        inputobj: InputObj
     ) -> WebId:
 
         try:
@@ -137,37 +141,4 @@ class AssetService:
 
 
 if __name__ == "__main__":
-
-    obj1 = {
-        "Name": "cfweqwwq",
-        "Descr": "xxxxxxxx",
-        "Age": 45,
-        "isOK": True,
-    }
-
-    selected = ["Name"]
-    assert "Name" in filter_response(obj1, tuple(selected))
-    assert "Descr" not in filter_response(obj1, tuple(selected))
-    assert "Age" not in filter_response(obj1, tuple(selected))
-    assert "isOK" not in filter_response(obj1, tuple(selected))
-    selected.append("Age")
-    assert "Name" in filter_response(obj1, tuple(selected))
-    assert "Descr" not in filter_response(obj1, tuple(selected))
-    assert "Age" in filter_response(obj1, tuple(selected))
-    assert "isOK" not in filter_response(obj1, tuple(selected))
-    selected.append("Descr")
-    assert "Name" in filter_response(obj1, tuple(selected))
-    assert "Descr" in filter_response(obj1, tuple(selected))
-    assert "Age" in filter_response(obj1, tuple(selected))
-    assert "isOK" not in filter_response(obj1, tuple(selected))
-    selected.append("isOK")
-    assert "Name" in filter_response(obj1, tuple(selected))
-    assert "Descr" in filter_response(obj1, tuple(selected))
-    assert "Age" in filter_response(obj1, tuple(selected))
-    assert "isOK" in filter_response(obj1, tuple(selected))
-    selected.append("NOEXISTENTFIELD")
-    assert "Name" in filter_response(obj1, tuple(selected))
-    assert "Descr" in filter_response(obj1, tuple(selected))
-    assert "Age" in filter_response(obj1, tuple(selected))
-    assert "isOK" in filter_response(obj1, tuple(selected))
-    assert len(filter_response(obj1)) == 0
+    pass

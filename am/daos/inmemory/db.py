@@ -5,7 +5,7 @@ from typing import Any, Generator
 
 from treelib import Tree
 
-################################################################################
+###############################################################################
 
 
 def bootstrap(filename: str | None = None):  # , **kwargs):
