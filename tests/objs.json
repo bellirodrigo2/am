@@ -1,0 +1,44 @@
+{
+    "node1": {
+        "name": "NODE1",
+        "client_id": "client1",
+        "description" : "node1 description",
+        "template" : "node1Template"
+        },
+    "node2": {
+        "name": "NODE2",
+        "client_id": "client2",
+        "description" : "node2 description",
+        "template" : "node2Template"
+        },
+    "node3": {
+        "name": "NODE3",
+        "client_id": "client3",
+        "description" : "node3 description",
+        "template" : "node3Template"
+        },
+    "item1": {
+        "name": "ITEM1",
+        "client_id": "client4",
+        "description" : "item1 description",
+        "item": "int"
+        },
+    "item2": {
+        "name": "ITEM2",
+        "client_id": "client5",
+        "description" : "item2 description",
+        "item": "int"
+        },
+    "item3": {
+        "name": "ITEM3",
+        "client_id": "client6",
+        "description" : "item3 description",
+        "item": "float"
+        },
+    "item4": {
+        "name": "ITEM4",
+        "client_id": "client7",
+        "description" : "item4 description",
+        "item": "timestamp"
+        }
+}

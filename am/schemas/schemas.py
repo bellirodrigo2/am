@@ -2,13 +2,13 @@ import os
 from functools import partial
 from typing import Generator, Type
 
-from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, ValidationError
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from am.schemas.config import get_schema_settings
 from am.schemas.loader import load_all_plugins
 from am.schemas.makeenums import EnumBase, make_enum, name
-from am.schemas.webid import WebId, make_webid, webid_from_string
+from am.schemas.webid import WebId, make_webid
 
 ##############################################################################
 
@@ -91,7 +91,7 @@ class InputObj(BaseModel):
     name: str | None = NameField(default_factory=lambda: next(name_gen))
     client_id: str | None = ClientIdField(default_factory=make_webid)
     description: str | None = DescriptionField(default=settings.default_description)
-    keywords: list[str] | None = KeywordsField(default=[])
+    # keywords: list[str] | None = KeywordsField(default=[])
 
 
 class Obj(InputObj):
@@ -180,12 +180,8 @@ class EnumInputObj(EnumBase):
     def children(self):
         return self._get_class.children()
 
-    # def make(self, obj):
-    #     print(obj, self._get_class[self.name])
-    #     return self._get_class[self.name](**obj)
 
-
-load_all_plugins(os.path.dirname(__file__), "plugins")
+load_all_plugins(os.path.dirname(__file__), settings.objects_folder)
 
 ObjEnum: Type[EnumInputObj] = make_enum(InputObj, EnumInputObj)
 

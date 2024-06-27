@@ -21,4 +21,4 @@ class DataTypeEnum(Enum):
 
 class Item(BaseItem):
 
-    type: DataTypeEnum = (Field(),)
+    type: DataTypeEnum = Field()

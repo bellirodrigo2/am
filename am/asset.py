@@ -1,17 +1,14 @@
 """ Asset Manager Service """
 
-from am.exceptions import AMValidationError, AssetHierarchyError, WebIdValidationError
+from pydantic import ValidationError
+
+from am.exceptions import (AMValidationError, AssetHierarchyError,
+                           WebIdValidationError)
 from am.interfaces import AssetDAOInterface, JsonReponse, ReadAllOptions
-from am.schemas.schemas import (
-    InputObj,
-    Obj,
-    ObjEnum,
-    ValidationError,
-    WebId,
-    is_valid_obj,
-    is_valid_parent,
-    webid_from_string,
-)
+from am.schemas.schemas import (InputObj, Obj, ObjEnum, WebId,
+                                is_valid_obj, is_valid_parent)
+from am.schemas.webid import webid_from_string
+
 
 ###############################################################################
 

@@ -1,17 +1,16 @@
 """ In Memory DAO """
 
-from typing import Callable
 from collections import namedtuple
+from typing import Callable
 
-from treelib import Tree, Node
+from treelib import Node, Tree
 
-from am.daos.inmemory.db import Tree
-from am.interfaces import JsonReponse, ReadAllOptions
-from am.schemas.schemas import InputObj, Obj, ObjEnum, WebId
+from am.schemas.schemas import Obj, ObjEnum, WebId
 
 ################################################################################
 
-DataNode = namedtuple('DataNode', ['objtype', 'obj'])
+DataNode = namedtuple("DataNode", ["objtype", "obj"])
+
 
 class InMemoryDAO:
 
@@ -33,9 +32,7 @@ class InMemoryDAO:
         if treenodes is None:
             raise Exception()
         nodes = [node.data for node in treenodes]
-        return tuple([
-            data.obj for data in nodes if data.objtype == children
-        ])
+        return tuple([data.obj for data in nodes if data.objtype == children])
 
     def create(self, webid: WebId | str, obj_type: ObjEnum, obj: Obj) -> WebId:
         """"""
@@ -45,6 +42,6 @@ class InMemoryDAO:
             tag=obj.name,
             identifier=obj.webid,
             parent=webid,
-            data= DataNode(objtype=obj_type, obj=obj)
+            data=DataNode(objtype=obj_type, obj=obj),
         )
         return obj.webid

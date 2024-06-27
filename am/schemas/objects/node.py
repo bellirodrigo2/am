@@ -9,4 +9,4 @@ from am.schemas.schemas import BaseNode
 
 class Node(BaseNode):
 
-    template: str = (Field(),)
+    template: str = Field()

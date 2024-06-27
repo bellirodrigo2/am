@@ -15,6 +15,8 @@ class SchemaSettings(BaseSettings):
         env_file_encoding="utf-8",
     )
 
+    objects_folder: str
+
     # special_chars: list[str] # = ["*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", "'", '"', ":"]
     path_delim: str
 
