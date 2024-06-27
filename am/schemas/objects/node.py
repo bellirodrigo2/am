@@ -1,9 +1,8 @@
 """ Node Object """
 
-from typing import Annotated
-
-from cahier.schemas.schemas import BaseNode
 from pydantic import Field
+
+from am.schemas.schemas import BaseNode
 
 ###############################################################################
 

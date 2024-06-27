@@ -1,9 +1,8 @@
 """ View Object """
 
-from typing import Annotated
-
-from cahier.schemas.schemas import BaseElement
 from pydantic import Field
+
+from am.schemas.schemas import BaseElement
 
 ###############################################################################
 

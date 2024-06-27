@@ -3,9 +3,9 @@
 # from typing import Annotated
 from uuid import UUID, uuid1
 
-from cahier.schemas.id_.objectid import ObjectId
+# from am.schemas.id_.objectid import ObjectId
 
-# from pydantic import Field
+# from pydantic import ValidationError
 
 
 ###############################################################################
@@ -15,6 +15,9 @@ WebId = UUID
 
 def make_webid() -> WebId:
     return uuid1()
+
+def webid_from_string(webid: str)->WebId:
+    return UUID(webid, version=1)
 
 
 # class hasWebId:
@@ -30,10 +33,10 @@ def make_webid() -> WebId:
 if __name__ == "__main__":
 
     print("ok")
-    id1 = ObjectId()
-    id2 = ObjectId()
+    # id1 = ObjectId()
+    # id2 = ObjectId()
 
-    print(id1)
-    sid = str(id1)
-    print(len(str.encode(sid)))
-    print(len(bytes.fromhex(sid)))
+    # print(id1)
+    # sid = str(id1)
+    # print(len(str.encode(sid)))
+    # print(len(bytes.fromhex(sid)))

@@ -2,14 +2,13 @@ import os
 from functools import partial
 from typing import Generator, Type
 
-from pydantic import (AliasGenerator, AnyUrl, BaseModel, ConfigDict, Field,
-                      ValidationError, field_validator)
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field, ValidationError
 from pydantic.alias_generators import to_camel
 
 from am.schemas.config import get_schema_settings
 from am.schemas.loader import load_all_plugins
 from am.schemas.makeenums import EnumBase, make_enum, name
-from am.schemas.webid import WebId, make_webid
+from am.schemas.webid import WebId, make_webid, webid_from_string
 
 ##############################################################################
 
@@ -193,3 +192,6 @@ ObjEnum: Type[EnumInputObj] = make_enum(InputObj, EnumInputObj)
 
 def is_valid_parent(parent: EnumInputObj, child: EnumInputObj):
     return child.base_type in parent.children
+
+def is_valid_obj(target: ObjEnum, obj: InputObj):
+    pass

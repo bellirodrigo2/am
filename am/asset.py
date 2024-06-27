@@ -1,24 +1,29 @@
 """ Asset Manager Service """
 
-from typing import Any, Callable
-
 from am.interfaces import AssetDAOInterface, JsonReponse, ReadAllOptions
-from am.schemas.schemas import InputObj, Obj, ObjEnum, WebId, is_valid_parent
+from am.exceptions import AssetHierarchyError, WebIdValidationError, AMValidationError
+from am.schemas.schemas import (
+    InputObj,
+    Obj,
+    ObjEnum,
+    WebId,
+    is_valid_parent,
+    is_valid_obj,
+    webid_from_string,
+    ValidationError
+)
 
 ###############################################################################
-
-
-class AssetServiceError(Exception):
-    pass
-
 
 def check_hierarchy(parent: ObjEnum, children: ObjEnum):
     if is_valid_parent(parent, children) is False:
         err = f"Object type {parent=} can not has a child of type {children}"
-        raise AssetServiceError(err)
+        raise AssetHierarchyError(err)
 
 
-def filter_response(obj: dict, selected_fields: list[str] | None) -> JsonReponse:
+def filter_response(
+    obj: dict, selected_fields: tuple[str, ...] | None = None
+) -> JsonReponse:
     return (
         {field: obj[field] for field in selected_fields if field in obj}
         if selected_fields
@@ -40,79 +45,99 @@ class AssetService:
     ) -> None:
         self.__dao = dao
 
-    def _add_one(self, webid: WebId, obj: InputObj) -> WebId:
-        # dao: AssetDAOInterface = self.__get_dao()
+    def _add_one(self, webid: WebId, obj: Obj) -> WebId:
         return self.__dao.create(webid=webid, obj=obj)
 
-    def _get_one(self, webid: WebId, selected_fields: tuple[str] | None) -> JsonReponse:
-        # dao: AssetDAOInterface = self.__get_dao()
-        # print('***************', dao)
+    def _get_one(
+        self, webid: WebId, selected_fields: tuple[str, ...] | None = None
+    ) -> Obj:
         return self.__dao.read(webid=webid, selected_fields=selected_fields)
 
     def _get_all(
         self, webid: WebId, child: ObjEnum, options: ReadAllOptions | None
-    ) -> list[Obj]:
-        # dao: AssetDAOInterface = self.__get_dao()
+    ) -> tuple[Obj, ...]:
         return self.__dao.list(webid=webid, children=child, options=options)
 
     def read(
-        self, webid: WebId, target: ObjEnum, selected_fields: tuple[str] | None = None
+        self,
+        webid: WebId | str,
+        target: ObjEnum,
+        selected_fields: tuple[str, ...] | None = None,
     ) -> JsonReponse:
 
-        obj: JsonReponse = self._get_one(webid=webid, selected_fields=selected_fields)
+        try:
+            id = webid_from_string(webid) if isinstance(webid, str) else webid
+        except ValueError:
+            raise WebIdValidationError()
+
+        obj: Obj = self._get_one(webid=id, selected_fields=selected_fields)
+        
         # if obj does not comply with the target pydantic model target Pydantic model,
         # an ValidationError is raised
-        # if parent_obj is not same model as parent, ValidationError is raised
-        ######## **** SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
-        target.make(obj)
+        try:
+            is_valid_obj(target, obj)
+        except ValidationError as e:
+            raise AMValidationError(e)
 
-        filtered = filter_response(obj, selected_fields) if selected_fields else obj
+        dictobj = obj.model_dump()
+        filtered: JsonReponse = (
+            filter_response(dictobj, selected_fields) if selected_fields else dictobj
+        )
         return add_link(filtered, target)
 
     def list(
         self,
+        webid: WebId | str,
         parent: ObjEnum,
         children: ObjEnum,
-        webid: WebId,
-        options: ReadAllOptions,
-    ) -> list[JsonReponse]:
+        options: ReadAllOptions | None,
+    ) -> tuple[JsonReponse, ...]:
         """"""
+
+        try:
+            id = webid_from_string(webid) if isinstance(webid, str) else webid
+        except ValueError:
+            raise WebIdValidationError()
 
         check_hierarchy(parent, children)
 
-        # CAST/ERROR CHECK
-        # if parent_obj is not same model as parent, ValidationError is raised
-        ######## **** SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
-        parent_obj = self._get_one(webid)
-        parent.make(parent_obj)
+        # **** SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
+        parent_obj: Obj = self._get_one(id)
+        try:
+            is_valid_obj(parent, parent_obj)
+        except ValidationError as e:
+            raise AMValidationError(e)
 
         # if parent/children is valid, and parent obj is the rigth type,
         # the _get_all() results type should be consistent
-        objs: list[JsonReponse] = self._get_all(
-            webid=webid, child=children, options=options
+        objs: tuple[Obj, ...] = self._get_all(
+            webid=id, child=children, options=options
         )
-
-        filtereds = (
-            [filter_response(obj, options.selected_fields) for obj in objs]
-            if options
-            else objs
+        selected_fields = options.selected_fields if options else None
+        filtereds: tuple[JsonReponse, ...] = tuple(
+            [filter_response(obj.model_dump(), selected_fields) for obj in objs]
         )
-
-        return add_link(filtereds, children)
-
-        return make_list_output(objs)
+        return filtereds
 
     def create(
-        self, parent: ObjEnum, children: ObjEnum, webid: WebId, obj: InputObj
+        self, webid: WebId | str, parent: ObjEnum, children: ObjEnum, inputobj: InputObj
     ) -> WebId:
+
+        try:
+            id = webid_from_string(webid) if isinstance(webid, str) else webid
+        except ValueError:
+            raise WebIdValidationError()
 
         check_hierarchy(parent, children)
 
-        # CAST/ERROR CHECK
-        # if obj is not same model as children, ValidationError is raised
-        children.make(obj)
+        try:
+            is_valid_obj(children, inputobj)
+        except ValidationError as e:
+            raise AMValidationError(e)
 
-        return self._add_one(webid=webid, obj=obj)
+        obj = Obj(**inputobj.model_dump())
+
+        return self._add_one(webid=id, obj=obj)
 
 
 if __name__ == "__main__":
@@ -125,29 +150,28 @@ if __name__ == "__main__":
     }
 
     selected = ["Name"]
-    assert "Name" in filter_response(obj1, selected)
-    assert "Descr" not in filter_response(obj1, selected)
-    assert "Age" not in filter_response(obj1, selected)
-    assert "isOK" not in filter_response(obj1, selected)
+    assert "Name" in filter_response(obj1, tuple(selected))
+    assert "Descr" not in filter_response(obj1, tuple(selected))
+    assert "Age" not in filter_response(obj1, tuple(selected))
+    assert "isOK" not in filter_response(obj1, tuple(selected))
     selected.append("Age")
-    assert "Name" in filter_response(obj1, selected)
-    assert "Descr" not in filter_response(obj1, selected)
-    assert "Age" in filter_response(obj1, selected)
-    assert "isOK" not in filter_response(obj1, selected)
+    assert "Name" in filter_response(obj1, tuple(selected))
+    assert "Descr" not in filter_response(obj1, tuple(selected))
+    assert "Age" in filter_response(obj1, tuple(selected))
+    assert "isOK" not in filter_response(obj1, tuple(selected))
     selected.append("Descr")
-    assert "Name" in filter_response(obj1, selected)
-    assert "Descr" in filter_response(obj1, selected)
-    assert "Age" in filter_response(obj1, selected)
-    assert "isOK" not in filter_response(obj1, selected)
+    assert "Name" in filter_response(obj1, tuple(selected))
+    assert "Descr" in filter_response(obj1, tuple(selected))
+    assert "Age" in filter_response(obj1, tuple(selected))
+    assert "isOK" not in filter_response(obj1, tuple(selected))
     selected.append("isOK")
-    assert "Name" in filter_response(obj1, selected)
-    assert "Descr" in filter_response(obj1, selected)
-    assert "Age" in filter_response(obj1, selected)
-    assert "isOK" in filter_response(obj1, selected)
+    assert "Name" in filter_response(obj1, tuple(selected))
+    assert "Descr" in filter_response(obj1, tuple(selected))
+    assert "Age" in filter_response(obj1, tuple(selected))
+    assert "isOK" in filter_response(obj1, tuple(selected))
     selected.append("NOEXISTENTFIELD")
-    assert "Name" in filter_response(obj1, selected)
-    assert "Descr" in filter_response(obj1, selected)
-    assert "Age" in filter_response(obj1, selected)
-    assert "isOK" in filter_response(obj1, selected)
-    selected = {}
-    assert len(filter_response(obj1, selected)) == 0
+    assert "Name" in filter_response(obj1, tuple(selected))
+    assert "Descr" in filter_response(obj1, tuple(selected))
+    assert "Age" in filter_response(obj1, tuple(selected))
+    assert "isOK" in filter_response(obj1, tuple(selected))
+    assert len(filter_response(obj1)) == 0

@@ -2,11 +2,10 @@
 import pytest
 from unittest.mock import MagicMock
 
-from icecream import ic
 
-from cahier.interfaces.assetservice import AssetInterface, ReadAllOptions
-from cahier.schemas.schemas import ObjEnum, WebId
-from cahier.services.asset import AssetService
+from am.interfaces import AssetInterface
+from am.schemas.schemas import ObjEnum
+from am.asset import AssetService
 
 ###############################################################################
 
@@ -40,10 +39,12 @@ def setup_function():
 
 @pytest.mark.parametrize("target", oks.keys())
 def test_getone_ok(target, mock_asset_service: AssetInterface):
-
+    
     id = "1c8accd9-2e70-11ef-a48f-3024a9fbd4aa"
     
     o = mock_asset_service.read(webid=id, target=target)
+    
+    assert o is not None
     mock_repo.read.assert_called_with(webid=id, selected_fields=None)
     mock_repo.list.assert_not_called()
 

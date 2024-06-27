@@ -1,7 +1,8 @@
 """ Asset Server Object """
 
-from cahier.schemas.schemas import BaseServer
 from pydantic import AnyUrl, Field
+
+from am.schemas.schemas import BaseServer
 
 ###############################################################################
 

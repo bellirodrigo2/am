@@ -1,13 +1,13 @@
 """"""
 import pytest
 
-from cahier.schemas.schemas import ObjEnum, is_valid_parent
+from am.schemas.schemas import ObjEnum, is_valid_parent
 
 ###############################################################################
 
 
-def obj_type(x):
-    return x.__class__.__name__.lower()
+# def obj_type(x):
+    # return x.__class__.__name__.lower()
 
 
 def test_enums():

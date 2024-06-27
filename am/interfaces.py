@@ -48,7 +48,10 @@ JsonReponse = dict[str, Any]
 class AssetInterface(Protocol):
 
     def read(
-        self, target: ObjEnum, webid: WebId, selected_fields: tuple[str] | None = None
+        self,
+        target: ObjEnum,
+        webid: WebId,
+        selected_fields: tuple[str, ...] | None = None,
     ) -> JsonReponse:
         """"""
         pass
@@ -59,7 +62,7 @@ class AssetInterface(Protocol):
         children: ObjEnum,
         webid: WebId,
         options: ReadAllOptions,
-    ) -> tuple[JsonReponse]:
+    ) -> tuple[JsonReponse, ...]:
         """"""
         pass
 
@@ -76,21 +79,21 @@ class AssetInterface(Protocol):
 class AssetDAOInterface(Protocol):
 
     def read(
-        self, webid: WebId, selected_fields: tuple[str] | None = None
-    ) -> JsonReponse:
+        self, webid: WebId | str, selected_fields: tuple[str, ...] | None = None
+    ) -> Obj:
         """"""
         pass
 
     def list(
         self,
+        webid: WebId | str,
         children: ObjEnum,
-        webid: WebId,
-        options: ReadAllOptions,
-    ) -> tuple[JsonReponse]:
+        options: ReadAllOptions | None,
+    ) -> tuple[Obj, ...]:
         """"""
         pass
 
-    def create(self, webid: WebId, obj: Obj) -> WebId:
+    def create(self, webid: WebId | str, obj: Obj) -> WebId:
         """"""
         pass
 

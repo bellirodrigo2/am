@@ -1,7 +1,7 @@
 """ Enums Factory """
 
 from enum import Enum
-from typing import Protocol, Type
+from typing import Type
 
 ###############################################################################
 
@@ -11,6 +11,9 @@ def name(x):
 
 
 class EnumBase:
+
+    __factory = None
+
     @classmethod
     def _init_class(cls, classes_list: list):
         cls.__factory = {name(x): x for x in classes_list}
@@ -22,6 +25,9 @@ class EnumBase:
 
     def make(self, obj):
         return self._get_class(**obj)
+
+    def validate(self, obj):
+        self._get_class(**obj)
 
 
 def get_deriveds(base_class: Type):
