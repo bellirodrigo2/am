@@ -1,15 +1,22 @@
 """"""
 import pytest
+import os
+from typing import Any
+import json
 
 from am.schemas.schemas import ObjEnum, is_valid_parent
 
 ###############################################################################
 
+@pytest.fixture
+def objs_pack()->dict[str, dict]:
 
-# def obj_type(x):
-    # return x.__class__.__name__.lower()
-
-
+    obj_file = os.path.join(os.path.dirname(__file__), 'objs.json')
+    with open(obj_file) as f:
+        objs: dict[str, dict] = json.load(f)
+        assert objs is not None
+    return objs
+    
 def test_enums():
     ObjEnum.assetserver
     ObjEnum.database
@@ -108,3 +115,14 @@ def test_factories_item_hierarchy():
     assert is_valid_parent(ObjEnum.item, ObjEnum.view) is False
     assert is_valid_parent(ObjEnum.item, ObjEnum.node) is False
     assert is_valid_parent(ObjEnum.item, ObjEnum.item)
+
+
+def test_objs(objs_pack):
+    
+    arg = {'template':"templated_NOD1E"}
+    o = ObjEnum.node
+    m = o.make(arg)
+    assert o.name == "node"
+    assert o.value == "nodes"
+    assert o.base_type == "node"
+    assert m.template == arg["template"]

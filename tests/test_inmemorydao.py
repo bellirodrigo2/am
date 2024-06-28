@@ -11,6 +11,7 @@ from am.daos.inmemory.memorydao import InMemoryDAO
 # from am.schemas.schemas import InputObj, Obj, ObjEnum, WebId
 
 ###############################################################################
+
 @pytest.fixture
 def test_pack()->tuple[InMemoryDAO, dict[str, dict[str, Any]]]:
 
