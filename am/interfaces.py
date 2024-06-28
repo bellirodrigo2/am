@@ -21,9 +21,7 @@ class ReadAllOptions(BaseModel):
 
     model_config = ConfigDict(
         alias_generator=AliasGenerator(
-            alias=to_camel,
-            validation_alias=to_camel,
-            serialization_alias=to_camel
+            alias=to_camel, validation_alias=to_camel, serialization_alias=to_camel
         ),
         populate_by_name=True,
         use_enum_values=True,
@@ -51,8 +49,8 @@ class AssetInterface(Protocol):
 
     def read(
         self,
+        webid: WebId | str,
         target: ObjEnum,
-        webid: WebId,
         selected_fields: tuple[str, ...] | None = None,
     ) -> JsonReponse:
         """"""
@@ -60,16 +58,16 @@ class AssetInterface(Protocol):
 
     def list(
         self,
+        webid: WebId | str,
         parent: ObjEnum,
         children: ObjEnum,
-        webid: WebId,
-        options: ReadAllOptions,
+        options: ReadAllOptions | None,
     ) -> tuple[JsonReponse, ...]:
         """"""
         pass
 
     def create(
-        self, parent: ObjEnum, children: ObjEnum, webid: WebId, obj: InputObj
+        self, webid: WebId | str, parent: ObjEnum, children: ObjEnum, inputobj: InputObj
     ) -> WebId:
         """"""
         pass

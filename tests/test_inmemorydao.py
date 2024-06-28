@@ -1,9 +1,10 @@
 """"""
-import pytest
-from typing import Any
-import os
 
 import json
+import os
+from typing import Any
+
+import pytest
 
 from am.daos.inmemory.db import bootstrap
 from am.daos.inmemory.memorydao import InMemoryDAO
@@ -12,20 +13,22 @@ from am.daos.inmemory.memorydao import InMemoryDAO
 
 ###############################################################################
 
+
 @pytest.fixture
-def test_pack()->tuple[InMemoryDAO, dict[str, dict[str, Any]]]:
+def test_pack() -> tuple[InMemoryDAO, dict[str, dict[str, Any]]]:
 
     tree = bootstrap()
-    dao = InMemoryDAO(get_db= lambda: tree)
-    objs = None
-    obj_file = os.path.join(os.path.dirname(__file__), 'objs.json')
+    dao = InMemoryDAO(get_db=lambda: tree)
+    obj_file = os.path.join(os.path.dirname(__file__), "objs.json")
     with open(obj_file) as f:
         objs: dict[str, dict[str, Any]] = json.load(f)
         assert objs is not None
     return (dao, objs)
 
+
 def setup_function():
     pass
+
 
 def test_create_some_nodes(test_pack: tuple):
     dao, objs = test_pack

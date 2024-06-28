@@ -58,37 +58,37 @@
         "type": "bytes"
     }
 ],
-"assetserver": 
+"assetservers": 
 [
 {
     "name": "assetserver1",
     "client_id": "client10",
     "description" : "assetserver1 description",
-    "source_url": "http://whatever.com"
+    "source_url": "http://whatever.com/"
 },
 {
     "name": "assetserver2",
     "client_id": "client11",
     "description" : "assetserver2 description",
-    "source_url": "http://example2.com"
+    "source_url": "http://example2.com/"
 }
 ],
-"database": 
+"databases": 
 [
 {
     "name": "database1",
     "client_id": "client11",
     "description" : "db1 description",
-    "host1": "s5a9am01"
+    "host": "s5a9am01"
 },
 {
     "name": "database2",
     "client_id": "client12",
     "description" : "database2 description",
-    "source_url": "s8ddam01"
+    "host": "s8ddam01"
 }
 ],
-"view": 
+"views": 
 [
 {
     "name": "view1",
@@ -103,7 +103,7 @@
     "view_str": "viewN2"
 }
 ],
-"proc": 
+"procs": 
 [
 {
     "name": "proc1",

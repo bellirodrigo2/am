@@ -1,8 +1,9 @@
 """"""
 
-import pytest
-import os
 import json
+import os
+
+import pytest
 
 from am.schemas.schemas import ObjEnum, is_valid_parent
 
@@ -131,3 +132,34 @@ def test_items(objs_pack):
     i = ObjEnum.item
     ms = [i.make(item) for item in items]
     assert [m.type for m in ms] == [item["type"] for item in items]
+
+
+def test_assetservers(objs_pack):
+
+    asservers = objs_pack["assetservers"]
+    a = ObjEnum.assetserver
+    ms = [a.make(aserver) for aserver in asservers]
+    assert [str(m.source_url) for m in ms] == [
+        (aserver["source_url"]) for aserver in asservers
+    ]
+
+
+def test_databases(objs_pack):
+    dbs = objs_pack["databases"]
+    d = ObjEnum.database
+    ms = [d.make(db) for db in dbs]
+    assert [m.host for m in ms] == [(db["host"]) for db in dbs]
+
+
+def test_proc(objs_pack):
+    procs = objs_pack["procs"]
+    p = ObjEnum.proc
+    ms = [p.make(proc) for proc in procs]
+    assert [m.proc_str for m in ms] == [(proc["proc_str"]) for proc in procs]
+
+
+def test_views(objs_pack):
+    views = objs_pack["views"]
+    v = ObjEnum.view
+    ms = [v.make(view) for view in views]
+    assert [m.view_str for m in ms] == [(view["view_str"]) for view in views]

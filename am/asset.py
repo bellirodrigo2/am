@@ -2,13 +2,17 @@
 
 from pydantic import ValidationError
 
-from am.exceptions import (AMValidationError, AssetHierarchyError,
-                           WebIdValidationError)
+from am.exceptions import AMValidationError, AssetHierarchyError, WebIdValidationError
 from am.interfaces import AssetDAOInterface, JsonReponse, ReadAllOptions
-from am.schemas.schemas import (InputObj, Obj, ObjEnum, WebId,
-                                is_valid_obj, is_valid_parent)
+from am.schemas.schemas import (
+    InputObj,
+    Obj,
+    ObjEnum,
+    WebId,
+    is_valid_obj,
+    is_valid_parent,
+)
 from am.schemas.webid import webid_from_string
-
 
 ###############################################################################
 
@@ -44,16 +48,19 @@ class AssetService:
         self.__dao = dao
 
     def _add_one(self, webid: WebId, obj_type: ObjEnum, obj: Obj) -> WebId:
+        # try/except para exceptions de am
         return self.__dao.create(webid=webid, obj=obj)
 
     def _get_one(
         self, webid: WebId, selected_fields: tuple[str, ...] | None = None
     ) -> Obj:
+        # try/except para exceptions de am
         return self.__dao.read(webid=webid, selected_fields=selected_fields)
 
     def _get_all(
         self, webid: WebId, child: ObjEnum, options: ReadAllOptions | None
     ) -> tuple[Obj, ...]:
+        # try/except para exceptions de am
         return self.__dao.list(webid=webid, children=child, options=options)
 
     def read(
@@ -88,7 +95,7 @@ class AssetService:
         webid: WebId | str,
         parent: ObjEnum,
         children: ObjEnum,
-        options: ReadAllOptions | None,
+        options: ReadAllOptions | None = None,
     ) -> tuple[JsonReponse, ...]:
         """"""
 
@@ -116,11 +123,7 @@ class AssetService:
         return filtereds
 
     def create(
-        self,
-        webid: WebId | str,
-        parent: ObjEnum,
-        children: ObjEnum,
-        inputobj: InputObj
+        self, webid: WebId | str, parent: ObjEnum, children: ObjEnum, inputobj: InputObj
     ) -> WebId:
 
         try:
@@ -138,6 +141,10 @@ class AssetService:
         obj = Obj(**inputobj.model_dump())
 
         return self._add_one(webid=id, obj_type=children, obj=obj)
+
+
+if __name__ == "__main__":
+    pass
 
 
 if __name__ == "__main__":

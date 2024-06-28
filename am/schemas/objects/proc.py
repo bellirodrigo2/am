@@ -9,4 +9,4 @@ from am.schemas.schemas import BaseElement
 
 class Proc(BaseElement):
 
-    proc_str: str = (Field(),)
+    proc_str: str = Field()

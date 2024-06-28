@@ -8,4 +8,4 @@ from am.schemas.schemas import BaseServer
 
 
 class AssetServer(BaseServer):
-    source_url: AnyUrl = (Field(),)
+    source_url: AnyUrl = Field()
