@@ -12,9 +12,7 @@ from am.schemas.webid import WebId, make_webid
 
 ##############################################################################
 
-SPECIAL_CHARS = [
-    "*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", """, """, ":"
-    ]
+SPECIAL_CHARS = ["*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", """, """, ":"]
 INVALID_CHARS = set(SPECIAL_CHARS)
 INVALID_CHARS.add("/")
 
@@ -75,7 +73,6 @@ KeywordsField = partial(
 
 
 class InputObj(BaseModel):
-
     @classmethod
     def base_type(cls) -> str:
         return "base"
@@ -92,9 +89,7 @@ class InputObj(BaseModel):
 
     name: str | None = NameField(default_factory=lambda: next(name_gen))
     client_id: str | None = ClientIdField(default_factory=make_webid)
-    description: str | None = DescriptionField(
-        default=settings.default_description
-        )
+    description: str | None = DescriptionField(default=settings.default_description)
     # keywords: list[str] | None = KeywordsField(default=[])
 
 

@@ -13,7 +13,6 @@ DataNode = namedtuple("DataNode", ["objtype", "obj"])
 
 
 class InMemoryDAO:
-
     def __init__(self, get_db: Callable[[], Tree]) -> None:
         self.get_db = get_db
 

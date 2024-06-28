@@ -43,9 +43,7 @@ def get_all_deriveds(base_class: Type):
     return [item for sublist in deriveds for item in sublist]
 
 
-def make_enum(
-    base_class: Type, enum_base: Type[EnumBase], module: str = __package__
-):
+def make_enum(base_class: Type, enum_base: Type[EnumBase], module: str = __package__):
 
     nested_classes = get_all_deriveds(base_class)
 

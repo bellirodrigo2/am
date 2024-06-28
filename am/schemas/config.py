@@ -18,8 +18,8 @@ class SchemaSettings(BaseSettings):
     objects_folder: str
 
     # special_chars: list[str] = [
-        # "*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", "'", '"', ":"
-        # ]
+    # "*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", "'", '"', ":"
+    # ]
     path_delim: str
 
     default_name: str

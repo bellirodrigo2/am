@@ -46,7 +46,6 @@ JsonReponse = dict[str, Any]
 
 
 class AssetInterface(Protocol):
-
     def read(
         self,
         webid: WebId | str,
@@ -77,7 +76,6 @@ class AssetInterface(Protocol):
 
 
 class AssetDAOInterface(Protocol):
-
     def read(self, webid: WebId | str) -> Obj:
         """"""
         pass
