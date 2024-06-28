@@ -57,5 +57,65 @@
         "description" : "item66 description",
         "type": "bytes"
     }
+],
+"assetserver": 
+[
+{
+    "name": "assetserver1",
+    "client_id": "client10",
+    "description" : "assetserver1 description",
+    "source_url": "http://whatever.com"
+},
+{
+    "name": "assetserver2",
+    "client_id": "client11",
+    "description" : "assetserver2 description",
+    "source_url": "http://example2.com"
+}
+],
+"database": 
+[
+{
+    "name": "database1",
+    "client_id": "client11",
+    "description" : "db1 description",
+    "host1": "s5a9am01"
+},
+{
+    "name": "database2",
+    "client_id": "client12",
+    "description" : "database2 description",
+    "source_url": "s8ddam01"
+}
+],
+"view": 
+[
+{
+    "name": "view1",
+    "client_id": "client13",
+    "description" : "view1 description",
+    "view_str": "viewN1"
+},
+{
+    "name": "view2",
+    "client_id": "client14",
+    "description" : "view2 description",
+    "view_str": "viewN2"
+}
+],
+"proc": 
+[
+{
+    "name": "proc1",
+    "client_id": "client15",
+    "description" : "proc1 description",
+    "proc_str": "processing1"
+},
+{
+    "name": "proc2",
+    "client_id": "client16",
+    "description" : "proc2 description",
+    "proc_str": "processing2"
+}
 ]
 }
