@@ -1,4 +1,5 @@
 """"""
+
 import pytest
 import os
 from typing import Any
@@ -8,15 +9,17 @@ from am.schemas.schemas import ObjEnum, is_valid_parent
 
 ###############################################################################
 
-@pytest.fixture
-def objs_pack()->dict[str, dict]:
 
-    obj_file = os.path.join(os.path.dirname(__file__), 'objs.json')
+@pytest.fixture
+def objs_pack() -> dict[str, dict]:
+
+    obj_file = os.path.join(os.path.dirname(__file__), "objs.json")
     with open(obj_file) as f:
         objs: dict[str, dict] = json.load(f)
         assert objs is not None
     return objs
-    
+
+
 def test_enums():
     ObjEnum.assetserver
     ObjEnum.database
@@ -28,7 +31,7 @@ def test_enums():
 
 
 def test_factories_assetserver():
-    arg = {'sourceUrl': "http://example.com:8000/"}
+    arg = {"sourceUrl": "http://example.com:8000/"}
     o = ObjEnum.assetserver
     m = o.make(arg)
     assert o.name == "assetserver"
@@ -38,17 +41,17 @@ def test_factories_assetserver():
 
 
 def test_factories_database():
-    arg = {'host': "some_db_field"}
+    arg = {"host": "some_db_field"}
     o = ObjEnum.database
     m = o.make(arg)
     assert o.name == "database"
     assert o.value == "databases"
     assert o.base_type == "root"
-    assert m.host == arg['host']
+    assert m.host == arg["host"]
 
 
 def test_factories_view():
-    arg = {'viewStr': "some_view_string"}
+    arg = {"viewStr": "some_view_string"}
     o = ObjEnum.view
     m = o.make(arg)
     assert o.name == "view"
@@ -58,7 +61,7 @@ def test_factories_view():
 
 
 def test_factories_node():
-    arg = {'template':"templated_NOD1E"}
+    arg = {"template": "templated_NOD1E"}
     o = ObjEnum.node
     m = o.make(arg)
     assert o.name == "node"
@@ -68,7 +71,7 @@ def test_factories_node():
 
 
 def test_factories_item():
-    arg = {'type':int}
+    arg = {"type": "int"}
     o = ObjEnum.item
     m = o.make(arg)
     assert o.name == "item"
@@ -117,12 +120,15 @@ def test_factories_item_hierarchy():
     assert is_valid_parent(ObjEnum.item, ObjEnum.item)
 
 
-def test_objs(objs_pack):
-    
-    arg = {'template':"templated_NOD1E"}
+def test_nodes(objs_pack):
+    nodes = objs_pack["nodes"]
     o = ObjEnum.node
-    m = o.make(arg)
-    assert o.name == "node"
-    assert o.value == "nodes"
-    assert o.base_type == "node"
-    assert m.template == arg["template"]
+    ms = [o.make(node) for node in nodes]
+    assert [m.template for m in ms] == [node["template"] for node in nodes]
+
+
+def test_items(objs_pack):
+    items = objs_pack["items"]
+    i = ObjEnum.item
+    ms = [i.make(item) for item in items]
+    assert [m.type for m in ms] == [item["type"] for item in items]
