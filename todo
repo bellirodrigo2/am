@@ -1,5 +1,0 @@
-fazer provide_dependency_with... usando context manager
-
-fazer str de webid como contstr(min=12, max=32), assim pelo menos ja restringe um pouco
-
-fazer um endpoint para checar os plugins (obj x sqlalchemy, etc)
