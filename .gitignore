@@ -7,6 +7,9 @@
 #ruff 
 .ruff_cache/
 
+#tox
+.tox/
+
 # mypy
 .mypy_cache/
 .dmypy.json
