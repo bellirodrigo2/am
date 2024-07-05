@@ -1,16 +1,15 @@
-""" Node Object """
+""" Asset Keywords Object """
 
 from pydantic import Field
 
-from am.schemas.baseobjs import BaseNode
+from am.schemas.baseobjs import BaseServer
 
 ###############################################################################
 
 
-class Node(BaseNode):
-
+class Keywords(BaseServer):
     @classmethod
     def byte_rep(cls) -> bytes:
-        return b"node"
+        return b"kewo"
 
-    template: str = Field()
+    keywords: list[str] = Field()

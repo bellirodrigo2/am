@@ -6,9 +6,9 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from am.asset import AssetService, WebIdValidationError
 from am.interfaces import AssetInterface
-from am.schemas.schemas import ObjEnum, WebId
+from am.OLD.asset import AssetService, WebIdValidationError
+from am.OLD.schemas import ObjEnum, WebId
 
 ###############################################################################
 
@@ -29,7 +29,7 @@ oks = {
 }
 
 mock_repo = MagicMock()
-mock_repo.read.side_effect = oks.values()
+mock_repo.get_one_by_webid.side_effect = oks.values()
 
 mock_break_repo = MagicMock()
 mock_break_repo.read.side_effect = list(reversed(oks.values()))
@@ -74,7 +74,7 @@ def test_getone_wrongwebid(target, mock_asset_service: AssetInterface):
     id = "1c8acc4a9fbd4aa"
 
     with pytest.raises(WebIdValidationError):
-        mock_asset_service.read(webid=id, target=target)
+        mock_asset_service.get_one_by_webid(webid=id, target=target)
 
 
 @pytest.mark.parametrize("target", oks.keys())
@@ -82,11 +82,11 @@ def test_getone_ok(target, mock_asset_service: AssetInterface):
 
     id = "1c8accd9-2e70-11ef-a48f-3024a9fbd4aa"
 
-    o = mock_asset_service.read(webid=id, target=target)
+    o = mock_asset_service.get_one_by_webid(webid=id, target=target)
 
     assert o is not None
-    mock_repo.read.assert_called_with(webid=WebId(id), selected_fields=None)
-    mock_repo.list.assert_not_called()
+    mock_repo.get_one_by_webid.assert_called_with(webid=WebId(id), selected_fields=None)
+    mock_repo.get_many_by_parent_webid.assert_not_called()
 
 
 @pytest.mark.parametrize("target", oks.keys())
@@ -95,7 +95,7 @@ def test_getone_wrong_obj(target: ObjEnum, mock_broken_asset_service: AssetInter
     id = "1c8accd9-2e70-11ef-a48f-3024a9fbd4aa"
 
     with pytest.raises(Exception):
-        mock_broken_asset_service.read(webid=id, target=target)
+        mock_broken_asset_service.get_one_by_webid(webid=id, target=target)
 
 
 @pytest.mark.parametrize("target", oks.keys())
@@ -104,7 +104,7 @@ def test_list_wrongwebid(target, mock_asset_service: AssetInterface):
     id = "1c8acc4a9fbd4aa"
 
     with pytest.raises(WebIdValidationError):
-        mock_asset_service.list(
+        mock_asset_service.get_many_by_parent_webid(
             webid=id, parent=target, children=ObjEnum.node, options=None
         )
 
@@ -121,12 +121,30 @@ def test_list_ok(mock_asset_service: AssetInterface):
 
     # precisa entender pq esta passando, mesmo com o fixture errado
 
-    mock_asset_service.list(webid=id, parent=aser, children=db, options=None)
-    mock_asset_service.list(webid=id, parent=db, children=node, options=None)
-    mock_asset_service.list(webid=id, parent=db, children=proc, options=None)
-    mock_asset_service.list(webid=id, parent=db, children=view, options=None)
-    mock_asset_service.list(webid=id, parent=node, children=node, options=None)
-    mock_asset_service.list(webid=id, parent=node, children=item, options=None)
-    mock_asset_service.list(webid=id, parent=node, children=proc, options=None)
-    mock_asset_service.list(webid=id, parent=node, children=view, options=None)
-    mock_asset_service.list(webid=id, parent=item, children=item, options=None)
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=aser, children=db, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=db, children=node, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=db, children=proc, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=db, children=view, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=node, children=node, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=node, children=item, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=node, children=proc, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=node, children=view, options=None
+    )
+    mock_asset_service.get_many_by_parent_webid(
+        webid=id, parent=item, children=item, options=None
+    )

@@ -4,9 +4,7 @@ from enum import Enum
 
 from pydantic import Field
 
-from am.schemas.schemas import BaseItem
-
-# from am.schemas.timestamp import Timestamp
+from am.schemas.baseobjs import BaseItem
 
 ###############################################################################
 
@@ -22,4 +20,8 @@ class ItemType(Enum):
 
 class Item(BaseItem):
 
-    type: ItemType = Field()
+    @classmethod
+    def byte_rep(cls) -> bytes:
+        return b"item"
+
+    data_type: ItemType = Field()

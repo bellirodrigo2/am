@@ -7,13 +7,13 @@ class AMError(Exception):
     pass
 
 
-class WebIdValidationError(AMError):
+class InconsistentIdTypeError(AMError):
     pass
 
 
-class AssetHierarchyError(AMError):
+class ObjHierarchyError(AMError):
     pass
 
 
-class AMValidationError(AMError):
+class IdNotFound(AMError):
     pass

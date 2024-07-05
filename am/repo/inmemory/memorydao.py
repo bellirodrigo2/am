@@ -5,7 +5,7 @@ from typing import Callable
 
 from treelib import Node, Tree
 
-from am.schemas.schemas import Obj, ObjEnum, WebId
+from am.OLD.schemas import Obj, ObjEnum, WebId
 
 ###############################################################################
 

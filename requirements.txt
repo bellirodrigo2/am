@@ -1,3 +1,4 @@
 pydantic == "^2.7.4"
 pydantic-settings == "^2.3.4"
 treelib == "^1.7.0"
+sqlalchemy

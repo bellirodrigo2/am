@@ -1,151 +1,168 @@
-""" Asset Manager Service """
+""""""
 
-from pydantic import ValidationError
-
-from am.exceptions import AMValidationError, AssetHierarchyError, WebIdValidationError
-from am.interfaces import AssetDAOInterface, JsonReponse, ReadAllOptions
-from am.schemas.schemas import (
-    InputObj,
-    Obj,
-    ObjEnum,
-    WebId,
-    is_valid_obj,
-    is_valid_parent,
+from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
+from am.interfaces import (
+    CreateRepository,
+    DeleteRepository,
+    IdFactoryInterface,
+    IdInterface,
+    JsonObj,
+    LabelInterface,
+    ListRepository,
+    ObjClassInterface,
+    ReadAllOptions,
+    ReadRepository,
 )
-from am.schemas.webid import webid_from_string
-
-###############################################################################
 
 
-def check_hierarchy(parent: ObjEnum, children: ObjEnum):
-    if is_valid_parent(parent, children) is False:
-        err = f"Object type {parent=} can not has a child of type {children}"
-        raise AssetHierarchyError(err)
+def check_webid(target: ObjClassInterface, webid: IdInterface) -> None:
+    if target.byte_rep() == webid.prefix:
+        return
+    raise InconsistentIdTypeError()
 
 
-def filter_response(
-    obj: dict, selected_fields: tuple[str, ...] | None = None
-) -> JsonReponse:
-    return (
-        {field: obj[field] for field in selected_fields if field in obj}
-        if selected_fields
-        else obj
-    )
+def check_hierarchy(target: ObjClassInterface, child: ObjClassInterface) -> None:
+    if child.base_type() in target.children():
+        return
+    raise ObjHierarchyError()
 
 
-def add_link(filtered: JsonReponse, target: ObjEnum) -> JsonReponse:
-    filtered["Links"] = []
-    return filtered
+class TargetAsset:
+
+    def __init__(self, target: ObjClassInterface, webid: IdInterface) -> None:
+
+        check_webid(target, webid)
+
+        self._target = target
+        self._webid = webid
+
+    def _fields_list(self) -> tuple[str, ...]:
+        label_fields = list(LabelInterface.__annotations__.keys())
+        target_fields = list(self._target.get_fields().keys())
+
+        return tuple(set(target_fields + label_fields))
 
 
-class AssetService:
-    """"""
+class ParentChildAsset(TargetAsset):
 
     def __init__(
         self,
-        dao: AssetDAOInterface,
+        target: ObjClassInterface,
+        webid: IdInterface,
+        child: ObjClassInterface,
     ) -> None:
-        self.__dao = dao
 
-    def _add_one(self, webid: WebId, obj_type: ObjEnum, obj: Obj) -> WebId:
-        # try/except para exceptions de am
-        return self.__dao.create(webid=webid, obj=obj)
+        check_hierarchy(target, child)
+        super().__init__(target=target, webid=webid)
+        self._child = child
 
-    def _get_one(
-        self, webid: WebId, selected_fields: tuple[str, ...] | None = None
-    ) -> Obj:
-        # try/except para exceptions de am
-        return self.__dao.read(webid=webid, selected_fields=selected_fields)
 
-    def _get_all(
-        self, webid: WebId, child: ObjEnum, options: ReadAllOptions | None
-    ) -> tuple[Obj, ...]:
-        # try/except para exceptions de am
-        return self.__dao.list(webid=webid, children=child, options=options)
+def split(obj: JsonObj) -> tuple[dict, dict]:
+    return {}, {}
 
-    def read(
+
+class CreateAsset(ParentChildAsset):
+
+    def __init__(
         self,
-        webid: WebId | str,
-        target: ObjEnum,
-        selected_fields: tuple[str, ...] | None = None,
-    ) -> JsonReponse:
+        target: ObjClassInterface,
+        webid: IdInterface,
+        repo: CreateRepository,
+        child: ObjClassInterface,
+        factory_id: IdFactoryInterface,
+    ) -> None:
+        super().__init__(target, webid, child)
+        self._factory_id = factory_id
+        self._repo = repo
 
-        try:
-            id = webid_from_string(webid) if isinstance(webid, str) else webid
-        except ValueError:
-            raise WebIdValidationError()
+    def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        obj: Obj = self._get_one(webid=id, selected_fields=selected_fields)
+        base, obj = split(inpobj)
 
-        # if obj does not comply with the target Pydantic model,
-        # an ValidationError is raised
-        try:
-            is_valid_obj(target, obj)
-        except ValidationError as e:
-            raise AMValidationError(e)
+        webid = self._factory_id(self._child.byte_rep())
+        base["webid"] = webid
+        obj["webid"] = webid
 
-        dob = obj.model_dump()
-        filtered: JsonReponse = (
-            filter_response(dob, selected_fields) if selected_fields else dob
-        )
-        return add_link(filtered, target)
+        self._repo(base, obj)
 
-    def list(
+        return {"webid": webid}
+
+
+def get_valid_fields(
+    obj_fields: tuple[str, ...], selected_fields: tuple[str, ...] | None
+) -> tuple[str, ...] | None:
+    if selected_fields:
+        return tuple(set(list(obj_fields) + list(selected_fields)))
+    return None
+
+
+def get_valid_field_filters(
+    obj_fields: tuple[str, ...], field_filter: dict[str, str] | None
+) -> dict[str, str] | None:
+    if field_filter:
+        return {k: v for k, v in field_filter.items() if k in obj_fields}
+    return None
+
+
+class ReadOneAsset(TargetAsset):
+
+    def __init__(
+        self, target: ObjClassInterface, webid: IdInterface, repo: ReadRepository
+    ) -> None:
+        super().__init__(target, webid)
+        self._repo = repo
+
+    def __call__(self, selected_fields: tuple[str, ...]) -> JsonObj:
+
+        fields = get_valid_fields(self._fields_list(), selected_fields)
+        return self._repo(selected_fields=fields)
+
+
+class ReadmanyAsset(ParentChildAsset):
+
+    def __init__(
         self,
-        webid: WebId | str,
-        parent: ObjEnum,
-        children: ObjEnum,
-        options: ReadAllOptions | None = None,
-    ) -> tuple[JsonReponse, ...]:
-        """"""
+        target: ObjClassInterface,
+        webid: IdInterface,
+        child: ObjClassInterface,
+        repo: ListRepository,
+    ) -> None:
+        super().__init__(target, webid, child)
+        self._repo = repo
 
-        try:
-            id = webid_from_string(webid) if isinstance(webid, str) else webid
-        except ValueError:
-            raise WebIdValidationError()
+    def __call__(self, options: ReadAllOptions) -> tuple[JsonObj, ...]:
 
-        check_hierarchy(parent, children)
+        valid_fields = self._fields_list()
 
-        # * SE O ID TIVER INFO DE TYPE, ESSE GET NAO PRECISA (um query a menos)
-        parent_obj: Obj = self._get_one(id)
-        try:
-            is_valid_obj(parent, parent_obj)
-        except ValidationError as e:
-            raise AMValidationError(e)
-
-        # if parent/children is valid, and parent obj is the rigth type,
-        # the _get_all() results type should be consistent
-        objs: tuple[Obj, ...] = self._get_all(id, children, options)
-        sel_fields = options.selected_fields if options else None
-        filtereds: tuple[JsonReponse, ...] = tuple(
-            [filter_response(obj.model_dump(), sel_fields) for obj in objs]
+        options.selected_fields = get_valid_fields(
+            valid_fields, options.selected_fields
         )
-        return filtereds
+        options.field_filter = get_valid_field_filters(
+            valid_fields, options.field_filter
+        )
+        options.field_filter_like = get_valid_field_filters(
+            valid_fields, options.field_filter_like
+        )
 
-    def create(
-        self, webid: WebId | str, parent: ObjEnum, children: ObjEnum, inputobj: InputObj
-    ) -> WebId:
+        search_full = options.search_full_hierarchy
+        search_full = search_full if self._target.is_tree() else False
 
-        try:
-            id = webid_from_string(webid) if isinstance(webid, str) else webid
-        except ValueError:
-            raise WebIdValidationError()
-
-        check_hierarchy(parent, children)
-
-        try:
-            is_valid_obj(children, inputobj)
-        except ValidationError as e:
-            raise AMValidationError(e)
-
-        obj = Obj(**inputobj.model_dump())
-
-        return self._add_one(webid=id, obj_type=children, obj=obj)
+        return self._repo(options=options)
 
 
-if __name__ == "__main__":
-    pass
+# class UpdateAsset(ParentChildAsset):
+# def __call__(self, updobj: UpdateObj) -> JsonObj:
+# pass
 
 
-if __name__ == "__main__":
-    pass
+class DeleteAsset(TargetAsset):
+
+    def __init__(
+        self, target: ObjClassInterface, webid: IdInterface, repo: DeleteRepository
+    ) -> None:
+        super().__init__(target, webid)
+        self._repo = repo
+
+    def __call__(self) -> None:
+
+        self._repo()
