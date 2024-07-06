@@ -10,12 +10,11 @@ from am.repo.sql.interfaces import ClosureTable, LabelTable
 
 tables: dict[str, Table] = {}
 
-for field in LabelInterface.__annotations__:
-    # make the label table here
-    ...
+# make_label
+# make_tree
 
 # make the closure tree table here
 
-for cls in get_obj_class_iter():
-    class_ = get_obj_class[cls]
+for clsname in get_obj_class_iter():
+    class_ = get_obj_class[clsname]
     # make sql table here
