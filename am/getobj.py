@@ -2,6 +2,7 @@
 
 import os
 from enum import Enum
+from typing import Iterator
 
 from am.interfaces import ObjClassInterface
 from am.schemas.baseobjs import BaseClass
@@ -40,3 +41,7 @@ def get_obj_class(name: str | Enum) -> ObjClassInterface:
 
     key = name if isinstance(name, str) else name.name
     return baseclass_map[str_transf(key)]
+
+
+def get_obj_class_iter() -> Iterator[str]:
+    return iter(baseclass_map.keys())

@@ -6,9 +6,6 @@ from am.exceptions import IdNotFound
 from am.interfaces import IdInterface, JsonObj, ReadAllOptions
 from am.repo.sql.interfaces import ClosureTable, LabelTable
 
-# TODO de onde vem webid, parent, child, depth, etc ????
-# precisa de uma interface talvez
-
 
 class SQLRepo:
 
