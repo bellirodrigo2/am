@@ -1,19 +1,19 @@
 """ Asset Manager Interfaces"""
 
 from enum import Enum
-from typing import Any, Callable, Protocol
+from typing import Any, Callable, Protocol, Self
 
 
 class IdInterface(Protocol):
+
+    @classmethod
+    def make(cls, pref: bytes) -> Self: ...
 
     prefix: bytes
 
     def __str__(self) -> str: ...
 
     def __bytes__(self) -> bytes: ...
-
-
-IdFactoryInterface = Callable[[bytes], IdInterface]
 
 
 class LabelInterface(Protocol):
@@ -101,7 +101,7 @@ class DeleteAssetInterface(Protocol):
 
 
 class CreateRepository(Protocol):
-    def __call__(self, base: JsonObj, obj_spec: JsonObj) -> IdInterface: ...
+    def __call__(self, base: JsonObj, obj: JsonObj) -> None: ...
 
 
 class ReadRepository(Protocol):

@@ -1,10 +1,11 @@
 """"""
 
+from typing import Callable
+
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
     CreateRepository,
     DeleteRepository,
-    IdFactoryInterface,
     IdInterface,
     JsonObj,
     LabelInterface,
@@ -57,8 +58,9 @@ class ParentChildAsset(TargetAsset):
         self._child = child
 
 
-def split(obj: JsonObj) -> tuple[dict, dict]:
-    return {}, {}
+# TODO implementação do splitobj... recebendo um json qualquer e cast para label e obj
+# must guarantee tuple[0] comply with db table label e tuple[1] com db table
+SplitObj = Callable[[JsonObj], tuple[JsonObj, JsonObj]]
 
 
 class CreateAsset(ParentChildAsset):
@@ -69,17 +71,21 @@ class CreateAsset(ParentChildAsset):
         webid: IdInterface,
         repo: CreateRepository,
         child: ObjClassInterface,
-        factory_id: IdFactoryInterface,
+        factory_id: type[IdInterface],
+        splitobj: SplitObj,
     ) -> None:
         super().__init__(target, webid, child)
         self._factory_id = factory_id
         self._repo = repo
+        self._split = splitobj
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        base, obj = split(inpobj)
+        base: JsonObj
+        obj: JsonObj
+        base, obj = self._split(inpobj)
 
-        webid = self._factory_id(self._child.byte_rep())
+        webid = self._factory_id.make(self._child.byte_rep())
         base["webid"] = webid
         obj["webid"] = webid
 
