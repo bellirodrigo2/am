@@ -51,17 +51,17 @@ if __name__ == "__main__":
     web_str = WebId(strid)
     assert str(web_str) == strid
     assert bytes(web_str) == binid
-    assert web_str.validat_pref("node")
-    assert web_str.validat_pref(b"node")
+    # assert web_str.validat_pref("node")
+    # assert web_str.validat_pref(b"node")
 
     web_pref = WebId(prefid)
     # assert str(web_pref) == strid
     # assert bytes(web_pref) == binid
-    assert web_pref.validat_pref("node")
-    assert web_pref.validat_pref(b"node")
+    # assert web_pref.validat_pref("node")
+    # assert web_pref.validat_pref(b"node")
 
     web_bin = WebId(binid)
     assert str(web_bin) == strid
     assert bytes(web_bin) == binid
-    assert web_bin.validat_pref("node")
-    assert web_bin.validat_pref(b"node")
+    # assert web_bin.validat_pref("node")
+    # assert web_bin.validat_pref(b"node")

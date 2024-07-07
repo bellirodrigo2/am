@@ -1,5 +1,6 @@
 """ Asset Manager Interfaces"""
 
+from collections.abc import Container, Iterable, Mapping
 from enum import Enum
 from typing import Any, Callable, Protocol, Self
 
@@ -29,7 +30,7 @@ class ObjInterface(Protocol):
     def base_type(cls) -> str: ...
 
     @classmethod
-    def children(cls) -> list[str]: ...
+    def children(cls) -> Container[str]: ...
 
     @classmethod
     def byte_rep(cls) -> bytes: ...
@@ -38,7 +39,7 @@ class ObjInterface(Protocol):
     def is_tree(cls) -> bool: ...
 
     @classmethod
-    def get_fields(cls) -> dict[str, type | None]: ...
+    def get_fields(cls) -> Mapping[str, type | None]: ...
 
 
 ObjClassInterface = type[ObjInterface]
@@ -53,17 +54,17 @@ class SortOrder(Enum):
 
 class ReadAllOptions(Protocol):
 
-    field_filter: dict[str, str] | None
-    field_filter_like: dict[str, str] | None
+    field_filter: Mapping[str, str] | None
+    field_filter_like: Mapping[str, str] | None
     search_full_hierarchy: bool | None
     sort_field: str | None
     sort_order: SortOrder | None
     start_index: int | None
     max_count: int | None
-    selected_fields: tuple[str, ...] | None
+    selected_fields: Iterable[str] | None
 
 
-JsonObj = dict[str, Any]
+JsonObj = Mapping[str, Any]
 
 ###############################################################################
 
@@ -77,11 +78,11 @@ class UpdateAssetInterface(Protocol):
 
 
 class ReadOneAssetInterface(Protocol):
-    def __call__(self, sel_fields: tuple[str, ...]) -> JsonObj: ...
+    def __call__(self, *fields: str) -> JsonObj: ...
 
 
 class ReadmanyAssetInterface(Protocol):
-    def __call__(self, sel_fields: ReadAllOptions) -> JsonObj: ...
+    def __call__(self, sel_fields: ReadAllOptions | None) -> JsonObj: ...
 
 
 class DeleteAssetInterface(Protocol):
@@ -89,7 +90,7 @@ class DeleteAssetInterface(Protocol):
         ...
 
         # ficou boa a aula a partir das 9:12 pm
-        # O OUTPUT TEM QUE SER UM READONLY.... MAPPED OBJECT... E NAO UMA ENTITY
+        # O OUTPUT TEM QUE SER UM READONLY... MAPPED OBJECT... E NAO UMA ENTITY
         # DESCRIçÂO DOS TESTES?/// DEVE CRIAR UMA CONTA COMO......
 
         # ASSISTIR AS 21:30.... sobre repository x database
@@ -100,24 +101,19 @@ class DeleteAssetInterface(Protocol):
 ###############################################################################
 
 
-class CreateRepository(Protocol):
-    def __call__(self, base: JsonObj, obj: JsonObj) -> None: ...
+class Repository(Protocol):
 
+    def create(
+        self, base: JsonObj, obj: JsonObj, id: IdInterface, istree: bool
+    ) -> None: ...
 
-class ReadRepository(Protocol):
-    def __call__(self, selected_fields: tuple[str, ...] | None) -> JsonObj: ...
+    def read(self, *fields: str) -> JsonObj: ...
 
+    def list(self, options: ReadAllOptions | None) -> Iterable[JsonObj]: ...
 
-class ListRepository(Protocol):
-    def __call__(self, options: ReadAllOptions | None) -> tuple[JsonObj, ...]: ...
+    def update(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj: ...
 
-
-class UpdateRepository(Protocol):
-    def __call__(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj: ...
-
-
-class DeleteRepository(Protocol):
-    def __call__(self) -> JsonObj: ...
+    def delete(self) -> JsonObj: ...
 
 
 if __name__ == "__main__":

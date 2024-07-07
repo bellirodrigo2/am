@@ -1,5 +1,7 @@
 """"""
 
+from collections.abc import Iterable
+
 from sqlalchemy import Column, Connection, Table, func, insert, join, over, select
 
 from am.exceptions import IdNotFound
@@ -15,33 +17,21 @@ class SQLRepo:
         id: IdInterface,
         labeltab: LabelTable,
         treetab: ClosureTable,
+        objtab: Table,  # TODO must be the right table here... should match obj
     ) -> None:
         self._conn = conn
         self._id = id
         self._labeltab = labeltab
         self._treetab = treetab
+        self._objtab = objtab
         self._join = join(
             self._labeltab.table,
             self._treetab.table,
             self._labeltab.webid == self._treetab.child,
         )
 
-    def _get_columns(self, selected_fields: tuple[str, ...] | None) -> list[Column]:
+    def _get_columns(self, *selected_fields: str) -> Iterable[Column]:
         return []
-
-
-class CreateRepository(SQLRepo):
-
-    def __init__(
-        self,
-        conn: Connection,
-        id: IdInterface,
-        labeltab: LabelTable,
-        treetab: ClosureTable,
-        objtab: Table,  # TODO must be the right table here... should match obj
-    ) -> None:
-        super().__init__(conn, id, labeltab, treetab)
-        self._objtab = objtab
 
     def _link_tree(self):
 
@@ -55,18 +45,21 @@ class CreateRepository(SQLRepo):
             over(func.row_number(), order_by=self._treetab.depth),
         ).where(self._treetab.child == id)
 
-        ins = treetab.insert().from_select(
-            # treetab.__annotations__ menos table
+        # TODO mudar essa implementação aqui.... treetab é um LabelTable... que nao sabe oque é insert
+        ins = insert(treetab).from_select(
             ["parent", "child", "depth"],
             stmt,
         )
         conn.execute(ins)
 
-    def __call__(self, base: JsonObj, obj: JsonObj, istree: bool) -> None:
-
+    def create(
+        self, base: JsonObj, obj: JsonObj, id: IdInterface, istree: bool
+    ) -> None:
         label = self._labeltab
         objtab = self._objtab
         conn = self._conn
+
+        # TODO ADD ID TO BASE E OBJ, CONFORME NOME DA COLUM ID
 
         stmtlabel = insert(label.table).values(base)
         conn.execute(stmtlabel)
@@ -85,26 +78,18 @@ class CreateRepository(SQLRepo):
             # rollback stmtlabel e tree
             raise
 
-
-class ReadRepository(SQLRepo):
-
-    def __call__(self, selected_fields: tuple[str, ...] | None) -> JsonObj:
-        """"""
-
+    def read(self, *fields: str) -> JsonObj:
         label = self._labeltab
         j = self._join
         id = self._id
-        cols: list[Column] = self._get_columns(selected_fields)
+        cols: Iterable[Column] = self._get_columns(*fields)
 
         stmt = select(*cols).select_from(j).where(label.webid == id)
         res = self._conn.execute(stmt).fetchone()
 
         if res:
             return res._asdict()
-        raise IdNotFound()
-
-
-class ListRepository(SQLRepo):
+        raise IdNotFound(str(id))
 
     def _select_children(self, *cols: Column):
 
@@ -126,14 +111,13 @@ class ListRepository(SQLRepo):
             .order_by(tree.depth.asc())
         )
 
-    def __call__(self, options: ReadAllOptions | None) -> tuple[JsonObj, ...]:
-
+    def list(self, options: ReadAllOptions | None) -> Iterable[JsonObj]:
         if options:
             searchfull = options.search_full_hierarchy or False
             fields = options.selected_fields or None
 
         # TODO AQUI NAO ESTA CORRETO
-        cols: list[Column] = self._get_columns(fields)
+        cols: Iterable[Column] = self._get_columns(fields)
 
         stmt = (
             self._select_descendants(*cols)
@@ -144,4 +128,10 @@ class ListRepository(SQLRepo):
 
         if res:
             return tuple([r._asdict() for r in res])
-        raise IdNotFound()
+        raise IdNotFound(str(self._id))
+
+    def update(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj:
+        return {}
+
+    def delete(self) -> JsonObj:
+        return {}

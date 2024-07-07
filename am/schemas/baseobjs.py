@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from collections.abc import Container, Mapping
 
 from pydantic import BaseModel
 
@@ -18,7 +19,7 @@ class BaseClass(BaseModel, ABC):
 
     @classmethod
     @abstractmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         pass
 
     @classmethod
@@ -32,7 +33,7 @@ class BaseClass(BaseModel, ABC):
         pass
 
     @classmethod
-    def get_fields(cls) -> dict[str, type | None]:
+    def get_fields(cls) -> Mapping[str, type | None]:
         return {k: v.annotation for k, v in cls.model_fields.items()}
 
 
@@ -43,7 +44,7 @@ class BaseServer(BaseClass):
         return "server"
 
     @classmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         return ["root"]
 
     @classmethod
@@ -57,7 +58,7 @@ class BaseRoot(BaseClass):
         return "root"
 
     @classmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         return ["element", "node"]
 
     @classmethod
@@ -71,7 +72,7 @@ class BaseElement(BaseClass):
         return "element"
 
     @classmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         return []
 
     @classmethod
@@ -85,7 +86,7 @@ class BaseNode(BaseClass):
         return "node"
 
     @classmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         return ["node", "item", "element"]
 
     @classmethod
@@ -99,7 +100,7 @@ class BaseItem(BaseClass):
         return "item"
 
     @classmethod
-    def children(cls) -> list[str]:
+    def children(cls) -> Container[str]:
         return ["item"]
 
     @classmethod

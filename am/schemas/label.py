@@ -3,9 +3,11 @@ from typing import Generator
 
 from pydantic import BaseModel, Field
 
-from am.OLD.webid import WebId, make_webid
 from am.schemas.comodel import ObjConfig
 from am.schemas.config import get_schema_settings
+from am.schemas.id_.objectid import ObjectId
+
+# from am.schemas.webid import WebId
 
 SPECIAL_CHARS = ["*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", """, """, ":"]
 INVALID_CHARS = set(SPECIAL_CHARS)
@@ -55,12 +57,12 @@ class InputObj(BaseModel):
     model_config = ObjConfig(extra="allow")  # to allow derived class casting
 
     name: str | None = NameField(default_factory=lambda: next(name_gen))
-    client_id: str | None = ClientIdField(default_factory=make_webid)
+    client_id: str | None = ClientIdField(default_factory=ObjectId)
     description: str | None = DescriptionField(default=settings.default_description)
 
 
-class Obj(InputObj):
-    webid: WebId = WebIdField(default_factory=make_webid)
+# class Obj(InputObj):
+# webid: WebId = WebIdField(default_factory=make_webid)
 
 
 class UpdateObj(BaseModel):

@@ -1,174 +1,136 @@
 """"""
 
-from typing import Callable
+from collections.abc import Callable, Iterable, Mapping, MutableMapping
 
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
-    CreateRepository,
-    DeleteRepository,
     IdInterface,
     JsonObj,
     LabelInterface,
-    ListRepository,
     ObjClassInterface,
     ReadAllOptions,
-    ReadRepository,
+    Repository,
 )
-
-
-def check_webid(target: ObjClassInterface, webid: IdInterface) -> None:
-    if target.byte_rep() == webid.prefix:
-        return
-    raise InconsistentIdTypeError()
-
-
-def check_hierarchy(target: ObjClassInterface, child: ObjClassInterface) -> None:
-    if child.base_type() in target.children():
-        return
-    raise ObjHierarchyError()
 
 
 class TargetAsset:
 
-    def __init__(self, target: ObjClassInterface, webid: IdInterface) -> None:
+    def __init__(
+        self,
+        repo: Repository,
+        target: ObjClassInterface,
+        webid: IdInterface,
+        # label: type[LabelInterface],
+    ) -> None:
+
+        def check_webid(target: ObjClassInterface, webid: IdInterface) -> None:
+            if target.byte_rep() == webid.prefix:
+                return
+            raise InconsistentIdTypeError(target.__name__, str(webid))
 
         check_webid(target, webid)
-
+        self._repo = repo
         self._target = target
         self._webid = webid
+        # self._label = label
 
-    def _fields_list(self) -> tuple[str, ...]:
+    def _fields_list(self) -> set[str]:
+
         label_fields = list(LabelInterface.__annotations__.keys())
         target_fields = list(self._target.get_fields().keys())
 
-        return tuple(set(target_fields + label_fields))
+        return set(target_fields + label_fields)
+
+    def _get_valid_fields(self, *fields: str) -> Iterable[str]:
+
+        obj_fields = self._fields_list()
+        if fields:
+            return set(obj_fields & set(fields))
+        return obj_fields
+
+    def _get_valid_field_filters(self, **filters: str) -> Mapping[str, str]:
+
+        obj_fields = self._fields_list()
+        return {k: v for k, v in filters.items() if k in obj_fields}
 
 
 class ParentChildAsset(TargetAsset):
 
     def __init__(
         self,
+        repo: Repository,
         target: ObjClassInterface,
         webid: IdInterface,
         child: ObjClassInterface,
     ) -> None:
 
+        super().__init__(repo=repo, target=target, webid=webid)
+
+        def check_hierarchy(
+            target: ObjClassInterface, child: ObjClassInterface
+        ) -> None:
+            if child.base_type() in target.children():
+                return
+            raise ObjHierarchyError(target.__name__, child.__name__)
+
         check_hierarchy(target, child)
-        super().__init__(target=target, webid=webid)
         self._child = child
 
 
-# TODO implementação do splitobj... recebendo um json qualquer e cast para label e obj
-# must guarantee tuple[0] comply with db table label e tuple[1] com db table
-SplitObj = Callable[[JsonObj], tuple[JsonObj, JsonObj]]
+SplitObjFunc = Callable[
+    [JsonObj, ObjClassInterface], tuple[MutableMapping, MutableMapping]
+]
 
 
 class CreateAsset(ParentChildAsset):
 
     def __init__(
         self,
+        repo: Repository,
         target: ObjClassInterface,
         webid: IdInterface,
-        repo: CreateRepository,
         child: ObjClassInterface,
-        factory_id: type[IdInterface],
-        splitobj: SplitObj,
+        split: SplitObjFunc,
     ) -> None:
-        super().__init__(target, webid, child)
-        self._factory_id = factory_id
-        self._repo = repo
-        self._split = splitobj
+        super().__init__(repo, target, webid, child)
+        self._split = split
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        base: JsonObj
-        obj: JsonObj
-        base, obj = self._split(inpobj)
+        # must guarantee comply: tuple[0] db labeltab e tuple[1] com objtab
+        base, obj = self._split(inpobj, self._child)
 
-        webid = self._factory_id.make(self._child.byte_rep())
-        base["webid"] = webid
-        obj["webid"] = webid
+        webid = self._webid.make(self._child.byte_rep())
 
-        self._repo(base, obj)
+        self._repo.create(base, obj, webid, self._child.is_tree())
 
         return {"webid": webid}
 
 
-def get_valid_fields(
-    obj_fields: tuple[str, ...], selected_fields: tuple[str, ...] | None
-) -> tuple[str, ...] | None:
-    if selected_fields:
-        return tuple(set(list(obj_fields) + list(selected_fields)))
-    return None
-
-
-def get_valid_field_filters(
-    obj_fields: tuple[str, ...], field_filter: dict[str, str] | None
-) -> dict[str, str] | None:
-    if field_filter:
-        return {k: v for k, v in field_filter.items() if k in obj_fields}
-    return None
-
-
 class ReadOneAsset(TargetAsset):
 
-    def __init__(
-        self, target: ObjClassInterface, webid: IdInterface, repo: ReadRepository
-    ) -> None:
-        super().__init__(target, webid)
-        self._repo = repo
+    def __call__(self, *fields: str) -> JsonObj:
 
-    def __call__(self, selected_fields: tuple[str, ...]) -> JsonObj:
-
-        fields = get_valid_fields(self._fields_list(), selected_fields)
-        return self._repo(selected_fields=fields)
+        sel_fields = self._get_valid_fields(*fields)
+        return self._repo.read(*sel_fields)
 
 
 class ReadmanyAsset(ParentChildAsset):
 
-    def __init__(
-        self,
-        target: ObjClassInterface,
-        webid: IdInterface,
-        child: ObjClassInterface,
-        repo: ListRepository,
-    ) -> None:
-        super().__init__(target, webid, child)
-        self._repo = repo
+    def __call__(self, options: ReadAllOptions | None) -> Iterable[JsonObj]:
 
-    def __call__(self, options: ReadAllOptions) -> tuple[JsonObj, ...]:
+        # TODO VER AQUI OQUE FAZER SE VIER NONE
 
-        valid_fields = self._fields_list()
-
-        options.selected_fields = get_valid_fields(
-            valid_fields, options.selected_fields
-        )
-        options.field_filter = get_valid_field_filters(
-            valid_fields, options.field_filter
-        )
-        options.field_filter_like = get_valid_field_filters(
-            valid_fields, options.field_filter_like
-        )
-
-        search_full = options.search_full_hierarchy
-        search_full = search_full if self._target.is_tree() else False
-
-        return self._repo(options=options)
+        return self._repo.list(options=options)
 
 
-# class UpdateAsset(ParentChildAsset):
-# def __call__(self, updobj: UpdateObj) -> JsonObj:
-# pass
+class UpdateAsset(ParentChildAsset):
+    def __call__(self, updobj: JsonObj) -> JsonObj:
+        return {}
 
 
 class DeleteAsset(TargetAsset):
 
-    def __init__(
-        self, target: ObjClassInterface, webid: IdInterface, repo: DeleteRepository
-    ) -> None:
-        super().__init__(target, webid)
-        self._repo = repo
-
     def __call__(self) -> None:
 
-        self._repo()
+        self._repo.delete()
