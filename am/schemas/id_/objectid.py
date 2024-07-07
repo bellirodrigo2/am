@@ -25,8 +25,8 @@ import time
 from random import SystemRandom
 from typing import Any, NoReturn, Optional, Type, Union
 
-from errors import InvalidId
-from tz_util import utc
+from am.schemas.id_.errors import InvalidId
+from am.schemas.id_.tz_util import utc
 
 _MAX_COUNTER_VALUE = 0xFFFFFF
 

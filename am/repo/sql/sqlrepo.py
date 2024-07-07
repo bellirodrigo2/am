@@ -2,11 +2,10 @@
 
 from collections.abc import Iterable
 
-from sqlalchemy import Column, Connection, Table, func, insert, join, over, select
+from sqlalchemy import Column, Connection, Select, func, insert, join, over, select
 
-from am.exceptions import IdNotFound
 from am.interfaces import IdInterface, JsonObj, ReadAllOptions
-from am.repo.sql.interfaces import ClosureTable, LabelTable
+from am.repo.sql.interfaces import LinksInterface, TableInterface
 
 
 class SQLRepo:
@@ -15,120 +14,63 @@ class SQLRepo:
         self,
         conn: Connection,
         id: IdInterface,
-        labeltab: LabelTable,
-        treetab: ClosureTable,
-        objtab: Table,  # TODO must be the right table here... should match obj
+        linktab: LinksInterface,
+        labeltab: TableInterface,
+        objtab: TableInterface,
     ) -> None:
         self._conn = conn
         self._id = id
         self._labeltab = labeltab
-        self._treetab = treetab
+        self._linktab = linktab
         self._objtab = objtab
-        self._join = join(
+        self._linkjoin = join(
             self._labeltab.table,
-            self._treetab.table,
-            self._labeltab.webid == self._treetab.child,
+            self._linktab.table,
+            self._labeltab.id == self._linktab.child,
+        )
+        self._objjoin = join(
+            self._labeltab.table,
+            self._objtab.table,
+            self._labeltab.id == self._objtab.id,
         )
 
-    def _get_columns(self, *selected_fields: str) -> Iterable[Column]:
-        return []
+    def get_columns(self, *fields: str) -> Iterable[Column]:
 
-    def _link_tree(self):
+        colslabel = self._labeltab.get_columns(*fields)
+        colsobj = self._objtab.get_columns(*fields)
 
-        label = self._labeltab
-        treetab = self._treetab
-        id = self._id
-        conn = self._conn
-        stmt = select(
-            self._treetab.parent,
-            label.webid,
-            over(func.row_number(), order_by=self._treetab.depth),
-        ).where(self._treetab.child == id)
-
-        # TODO mudar essa implementação aqui.... treetab é um LabelTable... que nao sabe oque é insert
-        ins = insert(treetab).from_select(
-            ["parent", "child", "depth"],
-            stmt,
-        )
-        conn.execute(ins)
+        return list(colslabel) + list(colsobj)
 
     def create(
         self, base: JsonObj, obj: JsonObj, id: IdInterface, istree: bool
     ) -> None:
-        label = self._labeltab
-        objtab = self._objtab
-        conn = self._conn
 
-        # TODO ADD ID TO BASE E OBJ, CONFORME NOME DA COLUM ID
-
-        stmtlabel = insert(label.table).values(base)
-        conn.execute(stmtlabel)
-
+        # ESSE ID VEM DE ONDE ??? PRECISA ADICIONAR AO OBJ ????
+        insertlabel = insert(self._labeltab.table).values(base)
         if istree:
-            try:
-                self._link_tree()
-
-            except Exception as e:
-                # rollback stmtlabel
-                raise
-        try:
-            stmtobj = insert(objtab).values(obj)
-            conn.execute(stmtobj)
-        except Exception as e:
-            # rollback stmtlabel e tree
-            raise
+            insertlink = self._linktab.insert(id)
+        insertobj = insert(self._objtab.table).values(obj)
+        # EXECUTE AND COMMIT
 
     def read(self, *fields: str) -> JsonObj:
-        label = self._labeltab
-        j = self._join
-        id = self._id
-        cols: Iterable[Column] = self._get_columns(*fields)
 
-        stmt = select(*cols).select_from(j).where(label.webid == id)
-        res = self._conn.execute(stmt).fetchone()
+        cols = self.get_columns(*fields)
+        sstmt = select(*cols).select_from(self._objjoin)
+        # EXECUTE AND COMMIT
+        return {}
 
-        if res:
-            return res._asdict()
-        raise IdNotFound(str(id))
+    def list(self, options: ReadAllOptions) -> Iterable[JsonObj]:
 
-    def _select_children(self, *cols: Column):
-
-        tree = self._treetab
-        j = self._join
-        id = self._id
-
-        return select(*cols).select_from(j).where(tree.parent == id, tree.depth == 1)
-
-    def _select_descendants(self, *cols: Column):
-        tree = self._treetab
-        j = self._join
-        id = self._id
-
-        return (
-            select(*cols)
-            .select_from(j)
-            .where(tree.parent == id, tree.depth > 0)
-            .order_by(tree.depth.asc())
-        )
-
-    def list(self, options: ReadAllOptions | None) -> Iterable[JsonObj]:
-        if options:
-            searchfull = options.search_full_hierarchy or False
-            fields = options.selected_fields or None
-
-        # TODO AQUI NAO ESTA CORRETO
-        cols: Iterable[Column] = self._get_columns(fields)
-
-        stmt = (
-            self._select_descendants(*cols)
-            if searchfull
-            else self._select_children(*cols)
-        )
-        res = self._conn.execute(stmt).fetchall()
-
-        if res:
-            return tuple([r._asdict() for r in res])
-        raise IdNotFound(str(self._id))
+        if options.selected_fields:
+            cols = self.get_columns(*options.selected_fields)
+        sstmt = select(*cols)
+        if options.search_full_hierarchy:
+            sstmt = self._linktab.select_descendants(id, sstmt)
+        else:
+            sstmt = self._linktab.select_children(id, sstmt)
+        sstmt.select_from(self._objjoin)
+        # add filter here com where
+        return []
 
     def update(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj:
         return {}

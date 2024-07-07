@@ -1,19 +1,33 @@
 """"""
 
+from collections.abc import Iterable
 from typing import Protocol
 
-from sqlalchemy import Column, Table
+from sqlalchemy import Column, Insert, Select, Table
 
 
-class ClosureTable(Protocol):
+class TableInterface(Protocol):
 
-    table: Table
-    parent: Column
-    child: Column
-    depth: Column
+    @property
+    def table(self) -> Table: ...
+
+    @property
+    def id(self) -> Column: ...
+
+    def get_columns(self, *selected_fields: str) -> Iterable[Column]: ...
 
 
-class LabelTable(Protocol):
+class LinksInterface(Protocol):
 
-    table: Table
-    webid: Column
+    @property
+    def table(self) -> Table: ...
+    @property
+    def parent(self) -> Column: ...
+    @property
+    def child(self) -> Column: ...
+    @property
+    def depth(self) -> Column: ...
+
+    def insert(self, id) -> Insert: ...
+    def select_children(self, id, sstmt: Select) -> Select: ...
+    def select_descendants(self, id, sstmt: Select) -> Select: ...
