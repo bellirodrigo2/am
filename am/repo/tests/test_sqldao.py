@@ -92,6 +92,27 @@ def db():
         conn.execute(istmt)
         conn.commit()
 
+    inserts = [
+        ("ZERO", uuids[0]),
+        (uuids[0], uuids[1]),
+        (uuids[0], uuids[2]),
+        (uuids[1], uuids[3]),
+        (uuids[1], uuids[4]),
+        (uuids[2], uuids[5]),
+    ]
+
+    for i in range(n):
+        with engine.begin() as conn:
+
+            val = {"parent": inserts[i][1], "child": inserts[i][1], "depth": 0}
+
+            isself = insert(link).values(val)
+            istmt = insert_link(parentid=inserts[i][0], childid=inserts[i][1])
+
+            conn.execute(isself)
+            conn.execute(istmt)
+            conn.commit()
+
     return engine, bases, nodes, items, n, uuids
 
 
@@ -117,32 +138,6 @@ def test_insert(db):
         # for r in res:
         # print(r)
 
-
-def test_insert_link(db):
-
-    engine, bases, nodes, items, n, uuids = db
-
-    inserts = [
-        ("ZERO", uuids[0]),
-        (uuids[0], uuids[1]),
-        (uuids[0], uuids[2]),
-        (uuids[1], uuids[3]),
-        (uuids[1], uuids[4]),
-        (uuids[2], uuids[5]),
-    ]
-
-    for i in range(n):
-        with engine.begin() as conn:
-
-            val = {"parent": inserts[i][1], "child": inserts[i][1], "depth": 0}
-
-            isself = insert(link).values(val)
-            istmt = insert_link(parentid=inserts[i][0], childid=inserts[i][1])
-
-            conn.execute(isself)
-            conn.execute(istmt)
-            conn.commit()
-
     with engine.begin() as conn:
         q = select(link).order_by(link.c.depth)
         res = conn.execute(q)
@@ -163,72 +158,3 @@ def test_insert_link(db):
         assert len(res.fetchall()) == n - 1
         # for r in res:
         # print(r)
-
-
-# # def test_read_tree():
-
-# #     with engine.begin() as conn:
-# #         query = select_descendants(uuids[0])
-# #         res = conn.execute(query)
-# #         assert len(res.fetchall()) == n - 1
-# #         # for r in res:
-# #         # print(r)
-
-# #         query = select_descendants(uuids[1])
-# #         res = conn.execute(query)
-# #         assert len(res.fetchall()) == 2
-# #         # for r in res:
-# #         # print(r)
-
-# #         query = select_descendants(uuids[4])
-# #         res = conn.execute(query)
-# #         assert len(res.fetchall()) == 0
-# #         # for r in res:
-# #         # print(r)
-
-
-# # def test_read_children():
-
-# #     with engine.begin() as conn:
-# #         query = select_children(uuids[0])
-# #         res = conn.execute(query)
-# #         assert len(res.fetchall()) == 2
-# #         # for r in res:
-# #         # print(r)
-
-
-# # def test_insert_node():
-
-# #     uuids2 = [str(uuid1()) for _ in range(n)]
-
-# #     bases = [{"name": f"NAMENODE{i}", "webid": uuids2[i]} for i in range(4)]
-# #     nodes = [{"webid": uuids2[i], "template": f"TEMP{i}"} for i in range(4)]
-
-# #     with engine.begin() as conn:
-# #         stmt = insert(basetable).values(bases)
-# #         stmt2 = insert(nodetable).values(nodes)
-# #         conn.execute(stmt)
-# #         conn.execute(stmt2)
-# #         conn.commit()
-
-# #     def read_node(id):
-# #         return (
-# #             select(basetable, nodetable)
-# #             .join(nodetable, basetable.c.webid == nodetable.c.webid)
-# #             .where(nodetable.c.webid == id)
-# #         )
-
-# #     with engine.begin() as conn:
-# #         query = read_node(uuids2[0])
-# #         res = conn.execute(query)
-# #         # assert len(res.fetchall()) == 2
-# #         for r in res:
-# #             print(r._asdict())
-
-
-# # def test_insert_item():
-# #     pass
-
-
-# # def test_read_item():
-# #     pass
