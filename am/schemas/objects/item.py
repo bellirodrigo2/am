@@ -4,7 +4,7 @@ from enum import Enum
 
 from pydantic import Field
 
-from am.schemas.baseobjs import BaseItem
+from am.schemas.basenode import BaseItem
 
 ###############################################################################
 

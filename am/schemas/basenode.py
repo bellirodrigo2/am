@@ -1,36 +1,36 @@
-from abc import ABC, abstractmethod
 from collections.abc import Container, Mapping
+from functools import partial
 
-from pydantic import BaseModel
+from pydantic import AliasGenerator, BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 
-from am.schemas.comodel import ObjConfig
+ObjConfig = partial(
+    ConfigDict,
+    alias_generator=AliasGenerator(
+        alias=to_camel, validation_alias=to_camel, serialization_alias=to_camel
+    ),
+    populate_by_name=True,
+    use_enum_values=True,
+    frozen=True,
+    str_strip_whitespace=True,
+)
 
-# from pydantic.fields import FieldInfo
 
-
-class BaseClass(BaseModel, ABC):
+class BaseClass(BaseModel):
 
     mode_config = ObjConfig()
 
     @classmethod
-    @abstractmethod
     def base_type(cls) -> str:
-        pass
+        return "base"
 
     @classmethod
-    @abstractmethod
     def children(cls) -> Container[str]:
-        pass
+        return []
 
     @classmethod
-    @abstractmethod
     def byte_rep(cls) -> bytes:
-        pass
-
-    @classmethod
-    @abstractmethod
-    def is_tree(cls) -> bool:
-        pass
+        return b"labe"
 
     @classmethod
     def get_fields(cls) -> Mapping[str, type | None]:
@@ -45,11 +45,7 @@ class BaseServer(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["root"]
-
-    @classmethod
-    def is_tree(cls) -> bool:
-        return False
+        return ["element", "root"]
 
 
 class BaseRoot(BaseClass):
@@ -59,11 +55,7 @@ class BaseRoot(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["element", "node"]
-
-    @classmethod
-    def is_tree(cls) -> bool:
-        return False
+        return ["element", "rootelement", "node"]
 
 
 class BaseElement(BaseClass):
@@ -75,9 +67,23 @@ class BaseElement(BaseClass):
     def children(cls) -> Container[str]:
         return []
 
+
+class RootElement(BaseClass):
     @classmethod
-    def is_tree(cls) -> bool:
-        return False
+    def base_type(cls) -> str:
+        return "rootelement"
+
+
+class NodeElement(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "nodeelement"
+
+
+class ItemElement(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "itemelement"
 
 
 class BaseNode(BaseClass):
@@ -87,11 +93,7 @@ class BaseNode(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["node", "item", "element"]
-
-    @classmethod
-    def is_tree(cls) -> bool:
-        return True
+        return ["node", "item", "element", "nodeelement"]
 
 
 class BaseItem(BaseClass):
@@ -101,8 +103,4 @@ class BaseItem(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["item"]
-
-    @classmethod
-    def is_tree(cls) -> bool:
-        return True
+        return ["item", "element", "itemelement"]

@@ -6,10 +6,10 @@ from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
     IdInterface,
     JsonObj,
-    LabelInterface,
-    ObjClassInterface,
+    NodeClassInterface,
     ReadAllOptions,
     Repository,
+    SchemaInterface,
 )
 
 
@@ -18,25 +18,25 @@ class TargetAsset:
     def __init__(
         self,
         repo: Repository,
-        target: ObjClassInterface,
+        label: SchemaInterface,
+        target: NodeClassInterface,
         webid: IdInterface,
-        # label: type[LabelInterface],
     ) -> None:
 
-        def check_webid(target: ObjClassInterface, webid: IdInterface) -> None:
+        def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
             if target.byte_rep() == webid.prefix:
                 return
             raise InconsistentIdTypeError(target.__name__, str(webid))
 
         check_webid(target, webid)
         self._repo = repo
+        self._label = label
         self._target = target
         self._webid = webid
-        # self._label = label
 
     def _fields_list(self) -> set[str]:
 
-        label_fields = list(LabelInterface.__annotations__.keys())
+        label_fields = list(self._label.get_fields().keys())
         target_fields = list(self._target.get_fields().keys())
 
         return set(target_fields + label_fields)
@@ -59,15 +59,16 @@ class ParentChildAsset(TargetAsset):
     def __init__(
         self,
         repo: Repository,
-        target: ObjClassInterface,
+        label: SchemaInterface,
+        target: NodeClassInterface,
         webid: IdInterface,
-        child: ObjClassInterface,
+        child: NodeClassInterface,
     ) -> None:
 
-        super().__init__(repo=repo, target=target, webid=webid)
+        super().__init__(repo=repo, label=label, target=target, webid=webid)
 
         def check_hierarchy(
-            target: ObjClassInterface, child: ObjClassInterface
+            target: NodeClassInterface, child: NodeClassInterface
         ) -> None:
             if child.base_type() in target.children():
                 return
@@ -78,7 +79,7 @@ class ParentChildAsset(TargetAsset):
 
 
 SplitObjFunc = Callable[
-    [JsonObj, ObjClassInterface], tuple[MutableMapping, MutableMapping]
+    [JsonObj, NodeClassInterface], tuple[MutableMapping, MutableMapping]
 ]
 
 
@@ -87,12 +88,13 @@ class CreateAsset(ParentChildAsset):
     def __init__(
         self,
         repo: Repository,
-        target: ObjClassInterface,
+        label: SchemaInterface,
+        target: NodeClassInterface,
         webid: IdInterface,
-        child: ObjClassInterface,
+        child: NodeClassInterface,
         split: SplitObjFunc,
     ) -> None:
-        super().__init__(repo, target, webid, child)
+        super().__init__(repo, label, target, webid, child)
         self._split = split
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
@@ -102,7 +104,7 @@ class CreateAsset(ParentChildAsset):
 
         webid = self._webid.make(self._child.byte_rep())
 
-        self._repo.create(base, obj, webid, self._child.is_tree())
+        self._repo.create(base, obj, webid)
 
         return {"webid": webid}
 

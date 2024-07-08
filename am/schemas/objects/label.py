@@ -1,9 +1,9 @@
 from functools import partial
 from typing import Generator
 
-from pydantic import BaseModel, Field
+from pydantic import Field
 
-from am.schemas.comodel import ObjConfig
+from am.schemas.basenode import BaseClass
 from am.schemas.config import get_schema_settings
 from am.schemas.id_.objectid import ObjectId
 
@@ -39,11 +39,6 @@ DescriptionField = partial(
     max_length=settings.description_max_length,
 )
 
-WebIdField = partial(
-    Field,
-    description="WebId Field Description",
-)
-
 ClientIdField = partial(
     Field,
     description="ClientId Field Description",
@@ -52,21 +47,14 @@ ClientIdField = partial(
 )
 
 
-class InputObj(BaseModel):
-
-    model_config = ObjConfig(extra="allow")  # to allow derived class casting
+class InputLabel(BaseClass):
 
     name: str | None = NameField(default_factory=lambda: next(name_gen))
     client_id: str | None = ClientIdField(default_factory=ObjectId)
     description: str | None = DescriptionField(default=settings.default_description)
 
 
-# class Obj(InputObj):
-# webid: WebId = WebIdField(default_factory=make_webid)
-
-
-class UpdateObj(BaseModel):
-    model_config = ObjConfig(extra="allow")
+class UpdateLabel(BaseClass):
 
     name: str | None = NameField(default=None)
     description: str | None = DescriptionField(default=None)

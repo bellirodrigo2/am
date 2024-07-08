@@ -1,7 +1,7 @@
 import pytest
 
 from am.container import Container, Factory
-from am.schemas.baseobjs import BaseClass
+from am.schemas.basenode import BaseClass
 
 
 @pytest.fixture

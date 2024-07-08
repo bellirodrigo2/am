@@ -2,7 +2,7 @@
 
 from collections.abc import Container, Iterable, Mapping
 from enum import Enum
-from typing import Any, Callable, Protocol, Self
+from typing import Any, Protocol, Self
 
 
 class IdInterface(Protocol):
@@ -17,14 +17,10 @@ class IdInterface(Protocol):
     def __bytes__(self) -> bytes: ...
 
 
-class LabelInterface(Protocol):
-
-    name: str
-    description: str
-    client_id: str
+JsonObj = Mapping[str, Any]
 
 
-class ObjInterface(Protocol):
+class NodeInterface(Protocol):
 
     @classmethod
     def base_type(cls) -> str: ...
@@ -35,16 +31,20 @@ class ObjInterface(Protocol):
     @classmethod
     def byte_rep(cls) -> bytes: ...
 
+
+class SchemaInterface(Protocol):
+
     @classmethod
-    def is_tree(cls) -> bool: ...
+    def cast(cls, **obj) -> JsonObj: ...
 
     @classmethod
     def get_fields(cls) -> Mapping[str, type | None]: ...
 
 
-ObjClassInterface = type[ObjInterface]
+class NodeSchemaInterface(NodeInterface, SchemaInterface, Protocol): ...
 
-ObjFactoryInterface2 = Callable[[str], ObjClassInterface]
+
+NodeClassInterface = type[NodeSchemaInterface]
 
 
 class SortOrder(Enum):
@@ -63,8 +63,6 @@ class ReadAllOptions(Protocol):
     max_count: int | None
     selected_fields: Iterable[str] | None
 
-
-JsonObj = Mapping[str, Any]
 
 ###############################################################################
 
@@ -103,9 +101,7 @@ class DeleteAssetInterface(Protocol):
 
 class Repository(Protocol):
 
-    def create(
-        self, base: JsonObj, obj: JsonObj, id: IdInterface, istree: bool
-    ) -> None: ...
+    def create(self, base: JsonObj, obj: JsonObj, id: IdInterface) -> None: ...
 
     def read(self, *fields: str) -> JsonObj: ...
 

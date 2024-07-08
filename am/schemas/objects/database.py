@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from am.schemas.baseobjs import BaseRoot
+from am.schemas.basenode import BaseRoot
 
 ###############################################################################
 

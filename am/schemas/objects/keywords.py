@@ -2,7 +2,7 @@
 
 from pydantic import Field
 
-from am.schemas.baseobjs import BaseServer
+from am.schemas.basenode import BaseServer
 
 ###############################################################################
 
