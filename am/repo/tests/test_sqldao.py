@@ -1,5 +1,7 @@
 """"""
 
+from collections.abc import Mapping
+
 import pytest
 from sqlalchemy import create_engine, func, insert, join, literal, over, select
 
@@ -29,7 +31,7 @@ item = Table(
 )
 
 
-def insert_link(parentid, childid):
+def insert_link(parentid: str, childid: str):
     sstmt = select(
         link.c.parent,
         literal(childid),
@@ -41,12 +43,18 @@ def insert_link(parentid, childid):
     )
 
 
-def select_children(id):
+def insert_node(parentid: str, base: Mapping, node: Mapping): ...
+
+
+def insert_items(parentid: str, **item: str): ...
+
+
+def select_children(id):  # depende do label e link
     j = join(label, link, label.c.webid == link.c.child)
     return select(link).select_from(j).where(link.c.parent == id, link.c.depth == 1)
 
 
-def select_descendants(id):
+def select_descendants(id):  # depende do label e link
     j = join(label, link, label.c.webid == link.c.child)
     return (
         select(link)
@@ -99,9 +107,15 @@ def db():
         (uuids[1], uuids[3]),
         (uuids[1], uuids[4]),
         (uuids[2], uuids[5]),
+        (uuids[3], uuids[6]),
+        (uuids[3], uuids[7]),
+        (uuids[4], uuids[8]),
+        (uuids[4], uuids[9]),
+        (uuids[5], uuids[10]),
+        (uuids[6], uuids[11]),
     ]
 
-    for i in range(n):
+    for i in range(2 * n):
         with engine.begin() as conn:
 
             val = {"parent": inserts[i][1], "child": inserts[i][1], "depth": 0}
@@ -123,38 +137,23 @@ def test_insert(db):
         q = select(label)
         res = conn.execute(q)
         assert len(res.fetchall()) == 2 * n
-        # for r in res:
-        # print(r)
-    with engine.begin() as conn:
+
         q = select(node)
         res = conn.execute(q)
         assert len(res.fetchall()) == n
-        # for r in res:
-        # print(r)
-    with engine.begin() as conn:
+
         q = select(item)
         res = conn.execute(q)
         assert len(res.fetchall()) == n
-        # for r in res:
-        # print(r)
 
-    with engine.begin() as conn:
         q = select(link).order_by(link.c.depth)
         res = conn.execute(q)
-        assert len(res.fetchall()) == 14
-        # for r in res:
-        # print(r)
+        assert len(res.fetchall()) == 39
 
-    with engine.begin() as conn:
         q = select_children(uuids[0])
         res = conn.execute(q)
         assert len(res.fetchall()) == 2
-        # for r in res:
-        # print(r)
 
-    with engine.begin() as conn:
         q = select_descendants(uuids[0])
         res = conn.execute(q)
-        assert len(res.fetchall()) == n - 1
-        # for r in res:
-        # print(r)
+        assert len(res.fetchall()) == 2 * n - 1
