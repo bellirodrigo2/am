@@ -74,6 +74,12 @@ class RootElement(BaseClass):
         return "rootelement"
 
 
+class TreeElement(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "treeelement"
+
+
 class NodeElement(BaseClass):
     @classmethod
     def base_type(cls) -> str:
@@ -93,7 +99,7 @@ class BaseNode(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["node", "item", "element", "nodeelement"]
+        return ["node", "item", "element", "nodeelement", "treeelement"]
 
 
 class BaseItem(BaseClass):
@@ -103,4 +109,4 @@ class BaseItem(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["item", "element", "itemelement"]
+        return ["item", "element", "itemelement", "treeelement"]

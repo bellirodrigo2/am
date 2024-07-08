@@ -2,12 +2,12 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import BaseServer
+from am.schemas.basenode import BaseElement
 
 ###############################################################################
 
 
-class Keywords(BaseServer):
+class Keywords(BaseElement):
     @classmethod
     def byte_rep(cls) -> bytes:
         return b"kewo"
