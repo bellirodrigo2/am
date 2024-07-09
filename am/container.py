@@ -1,7 +1,7 @@
 """ Container """
 
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping
-from enum import Enum
+from dataclasses import dataclass, field
 from functools import partial
 from typing import Any, Callable
 
@@ -39,25 +39,12 @@ class Singleton(type):
         return cls._instances[cls]
 
 
+@dataclass(frozen=True, slots=True)
 class Factory(metaclass=Singleton):
+    _classmap: Mapping[str, type]
 
-    def __init__(self, clss: type, nameconv: NameConv | None) -> None:
-        self._classmap: Mapping[str, type] = make_map(clss, nameconv)
-        # TODO improve this assert here, to guarantee plugins were loaded OK
+    def __post_init__(self) -> None:
         assert len(self._classmap) > 0
-        self._enum: Enum | None = None
-
-    def make_enum(self, title: str, nameconv: NameConv, valueconv: NameConv) -> None:
-        if self._enum is None:
-            Enum(title, {nameconv(x): valueconv(x) for x in self._classmap.keys()})
-
-    @property
-    def enum(self) -> Enum | None:
-        if self._enum is None:
-            self.make_enum(
-                self.__class__.__name__, lambda x: x.lower(), lambda x: x.upper()
-            )
-        return self._enum
 
     def get(self, clsname: str) -> type:
         return self._classmap[clsname]
@@ -72,13 +59,12 @@ class Factory(metaclass=Singleton):
         return iter(self._classmap.items())
 
 
+@dataclass(frozen=True, slots=True)
 class Container(metaclass=Singleton):
 
-    def __init__(
-        self,
-        container: MutableMapping[str, tuple[Callable, dict[str, Any]]] | None = None,
-    ) -> None:
-        self._container = container or {}
+    _container: MutableMapping[str, tuple[Callable, dict[str, Any]]] = field(
+        default_factory=dict
+    )
 
     def __getiitem__(self, key: str):
         return self._container[key]

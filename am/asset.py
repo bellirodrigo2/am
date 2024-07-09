@@ -1,6 +1,7 @@
 """"""
 
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
+from dataclasses import dataclass
 
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
@@ -13,26 +14,22 @@ from am.interfaces import (
 )
 
 
+@dataclass(frozen=True, slots=True)
 class TargetAsset:
 
-    def __init__(
-        self,
-        repo: Repository,
-        label: SchemaInterface,
-        target: NodeClassInterface,
-        webid: IdInterface,
-    ) -> None:
+    _repo: Repository
+    _label: SchemaInterface
+    _target: NodeClassInterface
+    _webid: IdInterface
+
+    def __post_init__(self) -> None:
 
         def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
             if target.byte_rep() == webid.prefix:
                 return
             raise InconsistentIdTypeError(target.__name__, str(webid))
 
-        check_webid(target, webid)
-        self._repo = repo
-        self._label = label
-        self._target = target
-        self._webid = webid
+        check_webid(self._target, self._webid)
 
     def _fields_list(self) -> set[str]:
 
@@ -54,18 +51,12 @@ class TargetAsset:
         return {k: v for k, v in filters.items() if k in obj_fields}
 
 
+@dataclass(frozen=True, slots=True)
 class ParentChildAsset(TargetAsset):
 
-    def __init__(
-        self,
-        repo: Repository,
-        label: SchemaInterface,
-        target: NodeClassInterface,
-        webid: IdInterface,
-        child: NodeClassInterface,
-    ) -> None:
+    _child: NodeClassInterface
 
-        super().__init__(repo=repo, label=label, target=target, webid=webid)
+    def __post_init__(self) -> None:
 
         def check_hierarchy(
             target: NodeClassInterface, child: NodeClassInterface
@@ -74,8 +65,7 @@ class ParentChildAsset(TargetAsset):
                 return
             raise ObjHierarchyError(target.__name__, child.__name__)
 
-        check_hierarchy(target, child)
-        self._child = child
+        check_hierarchy(self._target, self._child)
 
 
 SplitObjFunc = Callable[
@@ -83,19 +73,10 @@ SplitObjFunc = Callable[
 ]
 
 
+@dataclass(frozen=True, slots=True)
 class CreateAsset(ParentChildAsset):
 
-    def __init__(
-        self,
-        repo: Repository,
-        label: SchemaInterface,
-        target: NodeClassInterface,
-        webid: IdInterface,
-        child: NodeClassInterface,
-        split: SplitObjFunc,
-    ) -> None:
-        super().__init__(repo, label, target, webid, child)
-        self._split = split
+    _split: SplitObjFunc
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 

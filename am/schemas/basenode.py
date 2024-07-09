@@ -45,7 +45,7 @@ class BaseServer(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["element", "root"]
+        return ["element", "serverelement", "root"]
 
 
 class BaseRoot(BaseClass):
@@ -68,25 +68,31 @@ class BaseElement(BaseClass):
         return []
 
 
-class RootElement(BaseClass):
+class ServerElement(BaseElement):
+    @classmethod
+    def base_type(cls) -> str:
+        return "serverelement"
+
+
+class RootElement(BaseElement):
     @classmethod
     def base_type(cls) -> str:
         return "rootelement"
 
 
-class TreeElement(BaseClass):
+class TreeElement(BaseElement):
     @classmethod
     def base_type(cls) -> str:
         return "treeelement"
 
 
-class NodeElement(BaseClass):
+class NodeElement(BaseElement):
     @classmethod
     def base_type(cls) -> str:
         return "nodeelement"
 
 
-class ItemElement(BaseClass):
+class ItemElement(BaseElement):
     @classmethod
     def base_type(cls) -> str:
         return "itemelement"

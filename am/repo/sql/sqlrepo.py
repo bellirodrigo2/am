@@ -1,34 +1,43 @@
 """"""
 
 from collections.abc import Iterable
+from dataclasses import dataclass
 
-from sqlalchemy import Column, Connection, Select, func, insert, join, over, select
+from sqlalchemy import (
+    Column,
+    Connection,
+    Join,
+    Select,
+    func,
+    insert,
+    join,
+    over,
+    select,
+)
 
 from am.interfaces import IdInterface, JsonObj, ReadAllOptions
 from am.repo.sql.interfaces import LinksInterface, TableInterface
 
 
+@dataclass(frozen=True, slots=True)
 class SQLRepo:
+    _conn: Connection
+    _id: IdInterface
+    _linktab: LinksInterface
+    _labeltab: TableInterface
+    _objtab: TableInterface
 
-    def __init__(
-        self,
-        conn: Connection,
-        id: IdInterface,
-        linktab: LinksInterface,
-        labeltab: TableInterface,
-        objtab: TableInterface,
-    ) -> None:
-        self._conn = conn
-        self._id = id
-        self._labeltab = labeltab
-        self._linktab = linktab
-        self._objtab = objtab
-        self._linkjoin = join(
+    @property
+    def linkjoin(self) -> Join:
+        return join(
             self._labeltab.table,
             self._linktab.table,
             self._labeltab.id == self._linktab.child,
         )
-        self._objjoin = join(
+
+    @property
+    def objtab(self) -> Join:
+        return join(
             self._labeltab.table,
             self._objtab.table,
             self._labeltab.id == self._objtab.id,
@@ -55,7 +64,7 @@ class SQLRepo:
     def read(self, *fields: str) -> JsonObj:
 
         cols = self.get_columns(*fields)
-        sstmt = select(*cols).select_from(self._objjoin)
+        sstmt = select(*cols).select_from(self.objjoin)
         # EXECUTE AND COMMIT
         return {}
 
@@ -68,7 +77,7 @@ class SQLRepo:
             sstmt = self._linktab.select_descendants(id, sstmt)
         else:
             sstmt = self._linktab.select_children(id, sstmt)
-        sstmt.select_from(self._objjoin)
+        sstmt.select_from(self.objjoin)
         # add filter here com where
         return []
 

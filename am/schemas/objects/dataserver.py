@@ -11,3 +11,4 @@ class DataServer(BaseServer):
         return b"serv"
 
     source_url: AnyUrl = Field()
+    version: int = Field()

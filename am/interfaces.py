@@ -10,7 +10,8 @@ class IdInterface(Protocol):
     @classmethod
     def make(cls, pref: bytes) -> Self: ...
 
-    prefix: bytes
+    @property
+    def prefix(self) -> bytes: ...
 
     def __str__(self) -> str: ...
 

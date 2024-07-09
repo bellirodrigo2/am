@@ -1,21 +1,11 @@
 """ Item Object """
 
-from enum import Enum
-
 from pydantic import Field
 
 from am.schemas.basenode import BaseItem
+from am.schemas.datatype import DataType
 
 ###############################################################################
-
-
-class ItemType(Enum):
-    string = "str"
-    float = "float"
-    int = "int"
-    boolean = "bool"
-    byte = "bytes"
-    timestamp = "timestamp"
 
 
 class Item(BaseItem):
@@ -24,4 +14,5 @@ class Item(BaseItem):
     def byte_rep(cls) -> bytes:
         return b"item"
 
-    data_type: ItemType = Field()
+    data_point: str  # webid do point
+    data_type: DataType = Field()
