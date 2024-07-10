@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Iterable, Mapping, MutableMapping
 from dataclasses import dataclass
+from typing import Any
 
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
@@ -69,7 +70,8 @@ class ParentChildAsset(TargetAsset):
 
 
 SplitObjFunc = Callable[
-    [JsonObj, NodeClassInterface], tuple[MutableMapping, MutableMapping]
+    [JsonObj, NodeClassInterface],
+    tuple[MutableMapping[Any, Any], MutableMapping[Any, Any]],
 ]
 
 
@@ -83,7 +85,7 @@ class CreateAsset(ParentChildAsset):
         # must guarantee comply: tuple[0] db labeltab e tuple[1] com objtab
         base, obj = self._split(inpobj, self._child)
 
-        webid = self._webid.make(self._child.byte_rep())
+        webid: IdInterface = self._webid.make(self._child.byte_rep())
 
         self._repo.create(base, obj, webid)
 

@@ -29,9 +29,9 @@ def make_map(base_class: type, name_transf: NameConv | None) -> Mapping[str, typ
 
 
 class Singleton(type):
-    _instances: dict = {}
+    _instances: dict[type, Any] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         # else:
@@ -62,7 +62,7 @@ class Factory(metaclass=Singleton):
 @dataclass(frozen=True, slots=True)
 class Container(metaclass=Singleton):
 
-    _container: MutableMapping[str, tuple[Callable, dict[str, Any]]] = field(
+    _container: MutableMapping[str, tuple[Callable[..., Any], dict[str, Any]]] = field(
         default_factory=dict
     )
 
@@ -72,14 +72,14 @@ class Container(metaclass=Singleton):
     def __contains__(self, key: str):
         return key in self._container
 
-    def inject(self, key: str, get_dep: Callable, **configs) -> None:
+    def inject(self, key: str, get_dep: Callable[..., Any], **configs: Any) -> None:
         """"""
         if key in self._container:
             raise Exception(f"Dependency {key=} already exists")
 
         self._container[key] = (get_dep, configs)
 
-    def provide(self, key: str, **override_configs) -> Callable:
+    def provide(self, key: str, **override_configs: Any) -> Callable[..., Any]:
         """"""
         if key not in self._container:
             raise Exception(f"Dependency {key=} does not exists")
