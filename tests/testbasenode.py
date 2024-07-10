@@ -1,9 +1,11 @@
 from collections.abc import Container
 
+from pydantic import BaseModel
+
 from am.schemas.mapclass import make_map
 
 
-class Label:
+class Label(BaseModel):
 
     @classmethod
     def base_type(cls) -> str:
