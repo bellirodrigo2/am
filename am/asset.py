@@ -1,17 +1,17 @@
 """"""
 
-from collections.abc import Callable, Iterable, Mapping, MutableMapping
-from dataclasses import dataclass
-from typing import Any
+from collections.abc import Iterable
+from dataclasses import dataclass, field
 
+from am.container import Factory
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
+    DataNodeInterface,
     IdInterface,
     JsonObj,
     NodeClassInterface,
     ReadAllOptions,
     Repository,
-    SchemaInterface,
 )
 
 
@@ -19,45 +19,32 @@ from am.interfaces import (
 class TargetAsset:
 
     _repo: Repository
-    _label: SchemaInterface
-    _target: NodeClassInterface
+    _factory: Factory
+    _target: str
+    _target_cls: NodeClassInterface = field(init=False)
     _webid: IdInterface
 
     def __post_init__(self) -> None:
+
+        object.__setattr__(self, "_target_cls", self._factory.get(self._target))
 
         def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
             if target.byte_rep() == webid.prefix:
                 return
             raise InconsistentIdTypeError(target=target.__name__, webid=str(webid))
 
-        check_webid(target=self._target, webid=self._webid)
-
-    def _fields_list(self) -> set[str]:
-
-        label_fields = list(self._label.get_fields().keys())
-        target_fields = list(self._target.get_fields().keys())
-
-        return set(target_fields + label_fields)
-
-    def _get_valid_fields(self, *fields: str) -> Iterable[str]:
-
-        obj_fields = self._fields_list()
-        if fields:
-            return set(obj_fields & set(fields))
-        return obj_fields
-
-    def _get_valid_field_filters(self, **filters: str) -> Mapping[str, str]:
-
-        obj_fields = self._fields_list()
-        return {k: v for k, v in filters.items() if k in obj_fields}
+        check_webid(target=self._target_cls, webid=self._webid)
 
 
 @dataclass(frozen=True, slots=True)
 class ParentChildAsset(TargetAsset):
 
-    _child: NodeClassInterface
+    _child_cls: NodeClassInterface = field(init=False)
+    _child: str
 
     def __post_init__(self) -> None:
+
+        object.__setattr__(self, "_child_cls", self._factory.get(self._child))
 
         def check_hierarchy(
             target: NodeClassInterface, child: NodeClassInterface
@@ -66,28 +53,19 @@ class ParentChildAsset(TargetAsset):
                 return
             raise ObjHierarchyError(parent=target.__name__, child=child.__name__)
 
-        check_hierarchy(target=self._target, child=self._child)
-
-
-SplitObjFunc = Callable[
-    [JsonObj, NodeClassInterface],
-    tuple[MutableMapping[Any, Any], MutableMapping[Any, Any]],
-]
+        check_hierarchy(target=self._target_cls, child=self._child_cls)
 
 
 @dataclass(frozen=True, slots=True)
 class CreateAsset(ParentChildAsset):
 
-    _split: SplitObjFunc
-
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        # must guarantee comply: tuple[0] db labeltab e tuple[1] com objtab
-        base, obj = self._split(inpobj, self._child)
+        obj: DataNodeInterface = self._child_cls(**inpobj)
 
-        webid: IdInterface = self._webid.make(pref=self._child.byte_rep())
+        webid: IdInterface = self._webid.make(pref=self._child_cls.byte_rep())
 
-        self._repo.create(base=base, obj=obj, id=webid)
+        self._repo.create(obj=obj, id=webid)
 
         return {"webid": webid}
 
@@ -96,8 +74,8 @@ class ReadOneAsset(TargetAsset):
 
     def __call__(self, *fields: str) -> JsonObj:
 
-        sel_fields: Iterable[str] = self._get_valid_fields(*fields)
-        return self._repo.read(*sel_fields)
+        # sel_fields: Iterable[str] = self._get_valid_fields(*fields)
+        return self._repo.read(*fields)
 
 
 class ReadmanyAsset(ParentChildAsset):
@@ -119,3 +97,22 @@ class DeleteAsset(TargetAsset):
     def __call__(self) -> None:
 
         self._repo.delete()
+
+    # def _fields_list(self) -> Iterable[str]:
+
+    #     # label_fields = list(self._label.get_fields().keys())
+    #     return list(self._target_cls.get_fields().keys())
+
+    #     # return set(target_fields + label_fields)
+
+    # def _get_valid_fields(self, *fields: str) -> Iterable[str]:
+
+    #     obj_fields: Iterable[str] = self._fields_list()
+    #     if fields:
+    #         return set(set(obj_fields) & set(fields))
+    #     return obj_fields
+
+    # def _get_valid_field_filters(self, **filters: str) -> Mapping[str, str]:
+
+    #     obj_fields = self._fields_list()
+    #     return {k: v for k, v in filters.items() if k in obj_fields}

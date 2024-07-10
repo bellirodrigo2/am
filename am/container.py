@@ -7,26 +7,6 @@ from typing import Any, Callable
 
 ################################################################################
 
-NameConv = Callable[[str], str]
-
-
-def make_map(base_class: type, name_transf: NameConv | None) -> Mapping[str, type]:
-
-    def get_all_deriveds(base_class: type) -> Iterable[type]:
-
-        def get_deriveds(base_class: type) -> Iterable[type]:
-            return [c for c in base_class.__subclasses__()]
-
-        # TODO make it recursive
-        deriveds = [get_deriveds(cls) for cls in get_deriveds(base_class)]
-
-        return [item for sublist in deriveds for item in sublist]
-
-    nested_classes = get_all_deriveds(base_class)
-
-    name_transf = name_transf or (lambda x: x)
-    return {name_transf(x.__name__): x for x in nested_classes}
-
 
 class Singleton(type):
     _instances: dict[type, Any] = {}
@@ -49,10 +29,10 @@ class Factory(metaclass=Singleton):
     def get(self, clsname: str) -> type:
         return self._classmap[clsname]
 
-    def __getiitem__(self, clsname: str):
+    def __getiitem__(self, clsname: str) -> type:
         return self._classmap[clsname]
 
-    def __contains__(self, clsname: str):
+    def __contains__(self, clsname: str) -> bool:
         return clsname in self._classmap
 
     def __iter__(self) -> Iterator[tuple[str, type]]:
@@ -88,6 +68,41 @@ class Container(metaclass=Singleton):
         merged_config = {**configs, **override_configs}
         return partial(get_dep, **merged_config)
 
+    def reset(self) -> None:
+        self._container.clear()
+
 
 if __name__ == "__main__":
-    ...
+
+    class teste: ...
+
+    class derA(teste): ...
+
+    class derB(teste): ...
+
+    class derC(teste): ...
+
+    class derA2(derA): ...
+
+    class derA3(derA): ...
+
+    class derA4(derA): ...
+
+    class derB2(derB): ...
+
+    class derB3(derB): ...
+
+    class derB4(derB): ...
+
+    class derC2(derC): ...
+
+    class derC3(derC): ...
+
+    class derC4(derC): ...
+
+    def all_subclasses(cls: type) -> Iterable[Any]:
+        return set(cls.__subclasses__()).union(
+            [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+        )
+
+    print(all_subclasses(teste))

@@ -4,6 +4,8 @@ from functools import partial
 from pydantic import AliasGenerator, BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 
+from am.visitor import Visitable
+
 ObjConfig = partial(
     ConfigDict,
     alias_generator=AliasGenerator(
@@ -16,13 +18,13 @@ ObjConfig = partial(
 )
 
 
-class BaseClass(BaseModel):
+class Label(BaseModel, Visitable):
 
     mode_config = ObjConfig()
 
     @classmethod
     def base_type(cls) -> str:
-        return "base"
+        return "label"
 
     @classmethod
     def children(cls) -> Container[str]:
@@ -37,7 +39,7 @@ class BaseClass(BaseModel):
         return {k: v.annotation for k, v in cls.model_fields.items()}
 
 
-class BaseServer(BaseClass):
+class BaseServer(Label):
 
     @classmethod
     def base_type(cls) -> str:
@@ -48,7 +50,7 @@ class BaseServer(BaseClass):
         return ["element", "serverelement", "root"]
 
 
-class BaseRoot(BaseClass):
+class BaseRoot(Label):
     @classmethod
     def base_type(cls) -> str:
         return "root"
@@ -58,7 +60,7 @@ class BaseRoot(BaseClass):
         return ["element", "rootelement", "node"]
 
 
-class BaseElement(BaseClass):
+class BaseElement(Label):
     @classmethod
     def base_type(cls) -> str:
         return "element"
@@ -98,7 +100,7 @@ class ItemElement(BaseElement):
         return "itemelement"
 
 
-class BaseNode(BaseClass):
+class BaseNode(Label):
     @classmethod
     def base_type(cls) -> str:
         return "node"
@@ -108,7 +110,7 @@ class BaseNode(BaseClass):
         return ["node", "item", "element", "nodeelement", "treeelement"]
 
 
-class BaseItem(BaseClass):
+class BaseItem(Label):
     @classmethod
     def base_type(cls) -> str:
         return "item"

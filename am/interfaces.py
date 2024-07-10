@@ -21,7 +21,19 @@ class IdInterface(Protocol):
 JsonObj = Mapping[str, Any]
 
 
-class NodeInterface(Protocol):
+class VisitableInterface(Protocol):
+
+    @property
+    def visitor_rep(self) -> str: ...
+
+    def accept(self, visitor: Any) -> None: ...
+
+
+class VisitorInterface(Protocol):
+    def visit(self, element: VisitableInterface) -> Any: ...  # type: ignore
+
+
+class NodeInterface(VisitableInterface, Protocol):
 
     @classmethod
     def base_type(cls) -> str: ...
@@ -29,23 +41,20 @@ class NodeInterface(Protocol):
     @classmethod
     def children(cls) -> Container[str]: ...
 
+
+class ComposableInterface(Protocol):
+
     @classmethod
     def byte_rep(cls) -> bytes: ...
-
-
-class SchemaInterface(Protocol):
-
-    @classmethod
-    def cast(cls, **obj: Any) -> JsonObj: ...
 
     @classmethod
     def get_fields(cls) -> Mapping[str, type | None]: ...
 
 
-class NodeSchemaInterface(NodeInterface, SchemaInterface, Protocol): ...
+class DataNodeInterface(NodeInterface, ComposableInterface, Protocol): ...
 
 
-NodeClassInterface = type[NodeSchemaInterface]
+NodeClassInterface = type[DataNodeInterface]
 
 
 class SortOrder(Enum):
@@ -90,7 +99,8 @@ class DeleteAssetInterface(Protocol):
 
         # ficou boa a aula a partir das 9:12 pm
         # O OUTPUT TEM QUE SER UM READONLY... MAPPED OBJECT... E NAO UMA ENTITY
-        # DESCRIçÂO DOS TESTES?/// DEVE CRIAR UMA CONTA COMO......
+        # DESCRIçÂO D
+        # OS TESTES?/// DEVE CRIAR UMA CONTA COMO......
 
         # ASSISTIR AS 21:30.... sobre repository x database
         # OUVIR 21:58 sobre dao x repository
@@ -102,7 +112,7 @@ class DeleteAssetInterface(Protocol):
 
 class Repository(Protocol):
 
-    def create(self, base: JsonObj, obj: JsonObj, id: IdInterface) -> None: ...
+    def create(self, obj: DataNodeInterface, id: IdInterface) -> None: ...
 
     def read(self, *fields: str) -> JsonObj: ...
 
