@@ -44,6 +44,8 @@ class ParentChildAsset(TargetAsset):
 
     def __post_init__(self) -> None:
 
+        TargetAsset.__post_init__(self)
+
         object.__setattr__(self, "_child_cls", self._factory.get(self._child))
 
         def check_hierarchy(

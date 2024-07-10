@@ -4,7 +4,7 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from am.asset import TargetAsset
+from am.asset import ParentChildAsset, TargetAsset
 from am.container import Factory
 from am.interfaces import Repository
 from am.schemas.webid import WebId
@@ -51,3 +51,18 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
 
     with pytest.raises(expected_exception=Exception):
         TargetAsset(_repo=repo, _factory=factory, _target=target, _webid=webid)
+
+
+@pytest.mark.parametrize(
+    "target, webid, child",
+    [
+        ("BaseServer", WebId.make(input="serv668540fb5ac420d8fc35320a"), "BaseRoot"),
+        ("BaseRoot", WebId.make(input="root668540fb5ac420d8fc35320a"), "BaseElement"),
+        ("BaseNode", WebId.make(input="node668540fb5ac420d8fc35320a"), "BaseNode"),
+        ("BaseItem", WebId.make(input="item668540fb5ac420d8fc35320a"), "BaseItem"),
+    ],
+)
+def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
+    ParentChildAsset(
+        _repo=repo, _factory=factory, _target=target, _webid=webid, _child=child
+    )
