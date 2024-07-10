@@ -63,7 +63,7 @@ class CreateAsset(ParentChildAsset):
 
         obj: DataNodeInterface = self._child_cls(**inpobj)
 
-        webid: IdInterface = self._webid.make(pref=self._child_cls.byte_rep())
+        webid: IdInterface = self._webid.make(input=self._child_cls.byte_rep())
 
         self._repo.create(obj=obj, id=webid)
 
