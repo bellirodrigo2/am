@@ -28,9 +28,9 @@ class TargetAsset:
         def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
             if target.byte_rep() == webid.prefix:
                 return
-            raise InconsistentIdTypeError(target.__name__, str(webid))
+            raise InconsistentIdTypeError(target=target.__name__, webid=str(webid))
 
-        check_webid(self._target, self._webid)
+        check_webid(target=self._target, webid=self._webid)
 
     def _fields_list(self) -> set[str]:
 
@@ -64,9 +64,9 @@ class ParentChildAsset(TargetAsset):
         ) -> None:
             if child.base_type() in target.children():
                 return
-            raise ObjHierarchyError(target.__name__, child.__name__)
+            raise ObjHierarchyError(parent=target.__name__, child=child.__name__)
 
-        check_hierarchy(self._target, self._child)
+        check_hierarchy(target=self._target, child=self._child)
 
 
 SplitObjFunc = Callable[
@@ -85,9 +85,9 @@ class CreateAsset(ParentChildAsset):
         # must guarantee comply: tuple[0] db labeltab e tuple[1] com objtab
         base, obj = self._split(inpobj, self._child)
 
-        webid: IdInterface = self._webid.make(self._child.byte_rep())
+        webid: IdInterface = self._webid.make(pref=self._child.byte_rep())
 
-        self._repo.create(base, obj, webid)
+        self._repo.create(base=base, obj=obj, id=webid)
 
         return {"webid": webid}
 
@@ -96,7 +96,7 @@ class ReadOneAsset(TargetAsset):
 
     def __call__(self, *fields: str) -> JsonObj:
 
-        sel_fields = self._get_valid_fields(*fields)
+        sel_fields: Iterable[str] = self._get_valid_fields(*fields)
         return self._repo.read(*sel_fields)
 
 
