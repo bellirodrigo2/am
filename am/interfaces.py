@@ -80,7 +80,7 @@ class ReadOneAssetInterface(Protocol):
     def __call__(self, *fields: str) -> JsonObj: ...
 
 
-class ReadmanyAssetInterface(Protocol):
+class ReadManyAssetInterface(Protocol):
     def __call__(self, sel_fields: ReadAllOptions | None) -> JsonObj: ...
 
 

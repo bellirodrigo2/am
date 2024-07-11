@@ -79,13 +79,13 @@ class ReadOneAsset(TargetAsset):
 
     def __call__(self, *fields: str) -> JsonObj:
 
-        # sel_fields: Iterable[str] = self._get_valid_fields(*fields)
+        # TODO SE NAO VIER NADA, LISTA OS FIELDS ?????
         return self._repo.read(*fields)
 
 
-class ReadmanyAsset(ParentChildAsset):
+class ReadManyAsset(ParentChildAsset):
 
-    def __call__(self, options: ReadAllOptions | None) -> Iterable[JsonObj]:
+    def __call__(self, options: ReadAllOptions | None = None) -> Iterable[JsonObj]:
 
         # TODO VER AQUI OQUE FAZER SE VIER NONE
 
@@ -102,22 +102,3 @@ class DeleteAsset(TargetAsset):
     def __call__(self) -> None:
 
         self._repo.delete()
-
-    # def _fields_list(self) -> Iterable[str]:
-
-    #     # label_fields = list(self._label.get_fields().keys())
-    #     return list(self._target_cls.get_fields().keys())
-
-    #     # return set(target_fields + label_fields)
-
-    # def _get_valid_fields(self, *fields: str) -> Iterable[str]:
-
-    #     obj_fields: Iterable[str] = self._fields_list()
-    #     if fields:
-    #         return set(set(obj_fields) & set(fields))
-    #     return obj_fields
-
-    # def _get_valid_field_filters(self, **filters: str) -> Mapping[str, str]:
-
-    #     obj_fields = self._fields_list()
-    #     return {k: v for k, v in filters.items() if k in obj_fields}
