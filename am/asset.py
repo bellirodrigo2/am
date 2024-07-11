@@ -6,12 +6,13 @@ from dataclasses import dataclass, field
 from am.container import Factory
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
-    DataNodeInterface,
     IdInterface,
     JsonObj,
     NodeClassInterface,
+    NodeInterface,
     ReadAllOptions,
     Repository,
+    VisitorInterface,
 )
 
 
@@ -20,6 +21,7 @@ class TargetAsset:
 
     _repo: Repository
     _factory: Factory
+    _byterep: VisitorInterface
     _target: str
     _target_cls: NodeClassInterface = field(init=False)
     _webid: IdInterface
@@ -29,7 +31,7 @@ class TargetAsset:
         object.__setattr__(self, "_target_cls", self._factory.get(self._target))
 
         def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
-            if target.byte_rep() == webid.prefix:
+            if self._byterep.visit(target) == webid.prefix:
                 return
             raise InconsistentIdTypeError(target=target.__name__, webid=str(webid))
 
@@ -39,8 +41,8 @@ class TargetAsset:
 @dataclass(frozen=True, slots=True)
 class ParentChildAsset(TargetAsset):
 
-    _child_cls: NodeClassInterface = field(init=False)
     _child: str
+    _child_cls: NodeClassInterface = field(init=False)
 
     def __post_init__(self) -> None:
 
@@ -63,9 +65,11 @@ class CreateAsset(ParentChildAsset):
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        obj: DataNodeInterface = self._child_cls(**inpobj)
+        obj: NodeInterface = self._child_cls(**inpobj)
 
-        webid: IdInterface = self._webid.make(input=self._child_cls.byte_rep())
+        webid: IdInterface = self._webid.make(
+            input=self._byterep.visit(self._child_cls)
+        )
 
         self._repo.create(obj=obj, id=webid)
 

@@ -30,14 +30,6 @@ class Label(BaseModel, Visitable):
     def children(cls) -> Container[str]:
         return []
 
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"labe"
-
-    @classmethod
-    def get_fields(cls) -> Mapping[str, type | None]:
-        return {k: v.annotation for k, v in cls.model_fields.items()}
-
 
 class BaseServer(Label):
 

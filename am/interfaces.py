@@ -23,14 +23,14 @@ JsonObj = Mapping[str, Any]
 
 class VisitableInterface(Protocol):
 
-    @property
-    def visitor_rep(self) -> str: ...
+    @classmethod
+    def visitor_rep(cls) -> str: ...
 
     def accept(self, visitor: Any) -> None: ...
 
 
 class VisitorInterface(Protocol):
-    def visit(self, element: VisitableInterface) -> Any: ...  # type: ignore
+    def visit(self, element: VisitableInterface | type[VisitableInterface]) -> Any: ...  # type: ignore
 
 
 class NodeInterface(VisitableInterface, Protocol):
@@ -41,20 +41,11 @@ class NodeInterface(VisitableInterface, Protocol):
     @classmethod
     def children(cls) -> Container[str]: ...
 
-
-class ComposableInterface(Protocol):
-
-    @classmethod
-    def byte_rep(cls) -> bytes: ...
-
-    @classmethod
-    def get_fields(cls) -> Mapping[str, type | None]: ...
+    # @classmethod
+    # def byte_rep(cls) -> bytes: ...
 
 
-class DataNodeInterface(NodeInterface, ComposableInterface, Protocol): ...
-
-
-NodeClassInterface = type[DataNodeInterface]
+NodeClassInterface = type[NodeInterface]
 
 
 class SortOrder(Enum):
@@ -112,7 +103,7 @@ class DeleteAssetInterface(Protocol):
 
 class Repository(Protocol):
 
-    def create(self, obj: DataNodeInterface, id: IdInterface) -> None: ...
+    def create(self, obj: NodeInterface, id: IdInterface) -> None: ...
 
     def read(self, *fields: str) -> JsonObj: ...
 

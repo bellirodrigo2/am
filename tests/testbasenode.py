@@ -1,11 +1,23 @@
 from collections.abc import Container
+from dataclasses import dataclass
 
 from pydantic import BaseModel
 
 from am.schemas.mapclass import make_map
+from am.visitor import GetByteRep, Visitable, Visitor
 
 
-class Label(BaseModel):
+@dataclass(frozen=True, slots=True)
+class ByteRepVisitorTest(Visitor):
+    label: GetByteRep = lambda x: b"labe"
+    baseserver: GetByteRep = lambda x: b"serv"
+    baseroot: GetByteRep = lambda x: b"root"
+    baseelement: GetByteRep = lambda x: b"elem"
+    basenode: GetByteRep = lambda x: b"node"
+    baseitem: GetByteRep = lambda x: b"item"
+
+
+class Label(BaseModel, Visitable):
 
     @classmethod
     def base_type(cls) -> str:
@@ -14,10 +26,6 @@ class Label(BaseModel):
     @classmethod
     def children(cls) -> Container[str]:
         return []
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"labe"
 
 
 class BaseServer(Label):
@@ -30,10 +38,6 @@ class BaseServer(Label):
     def children(cls) -> Container[str]:
         return ["element", "serverelement", "root"]
 
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"serv"
-
 
 class BaseRoot(Label):
     @classmethod
@@ -43,10 +47,6 @@ class BaseRoot(Label):
     @classmethod
     def children(cls) -> Container[str]:
         return ["element", "rootelement", "node"]
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"root"
 
 
 class BaseElement(Label):
@@ -58,10 +58,6 @@ class BaseElement(Label):
     def children(cls) -> Container[str]:
         return []
 
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"elem"
-
 
 class BaseNode(Label):
     @classmethod
@@ -72,10 +68,6 @@ class BaseNode(Label):
     def children(cls) -> Container[str]:
         return ["node", "item", "element", "nodeelement", "treeelement"]
 
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"node"
-
 
 class BaseItem(Label):
     @classmethod
@@ -85,10 +77,6 @@ class BaseItem(Label):
     @classmethod
     def children(cls) -> Container[str]:
         return ["item", "element", "itemelement", "treeelement"]
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"item"
 
 
 classes_map = make_map(Label)

@@ -6,9 +6,9 @@ from am.schemas.basenode import BaseServer
 
 
 class DataServer(BaseServer):
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"serv"
+    # @classmethod
+    # def byte_rep(cls) -> bytes:
+    # return b"serv"
 
     source_url: AnyUrl = Field()
     version: int = Field()

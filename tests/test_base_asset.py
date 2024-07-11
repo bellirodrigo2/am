@@ -14,12 +14,13 @@ from am.container import Factory
 from am.interfaces import Repository
 from am.schemas.webid import WebId
 
-from .testbasenode import classes_map
+from .testbasenode import ByteRepVisitorTest, classes_map
 
 ###############################################################################
 
 
 factory = Factory(classes_map)
+visitor = ByteRepVisitorTest()
 
 
 # testing TargetAsset
@@ -39,7 +40,9 @@ def repo() -> Repository:
     ],
 )
 def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
-    TargetAsset(_repo=repo, _factory=factory, _target=target, _webid=webid)
+    TargetAsset(
+        _repo=repo, _factory=factory, _target=target, _webid=webid, _byterep=visitor
+    )
 
 
 @pytest.mark.parametrize(
@@ -55,7 +58,9 @@ def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
 def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
 
     with pytest.raises(expected_exception=InconsistentIdTypeError):
-        TargetAsset(_repo=repo, _factory=factory, _target=target, _webid=webid)
+        TargetAsset(
+            _repo=repo, _factory=factory, _target=target, _webid=webid, _byterep=visitor
+        )
 
 
 @pytest.mark.parametrize(
@@ -69,7 +74,12 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
 )
 def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
     ParentChildAsset(
-        _repo=repo, _factory=factory, _target=target, _webid=webid, _child=child
+        _repo=repo,
+        _factory=factory,
+        _target=target,
+        _webid=webid,
+        _child=child,
+        _byterep=visitor,
     )
 
 
@@ -86,5 +96,10 @@ def test_parent_asset_nok(target: str, webid: WebId, repo: Repository, child: st
 
     with pytest.raises(expected_exception=ObjHierarchyError):
         ParentChildAsset(
-            _repo=repo, _factory=factory, _target=target, _webid=webid, _child=child
+            _repo=repo,
+            _factory=factory,
+            _byterep=visitor,
+            _target=target,
+            _webid=webid,
+            _child=child,
         )
