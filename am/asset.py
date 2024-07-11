@@ -70,7 +70,6 @@ class CreateAsset(ParentChildAsset):
         webid: IdInterface = self._webid.make(
             input=self._byterep.visit(self._child_cls)
         )
-
         self._repo.create(obj=obj, id=webid)
 
         return {"webid": webid}

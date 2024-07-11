@@ -14,7 +14,7 @@ from am.container import Factory
 from am.interfaces import Repository
 from am.schemas.webid import WebId
 
-from .testbasenode import ByteRepVisitorTest, classes_map
+from .basenodetest import ByteRepVisitorTest, classes_map
 
 ###############################################################################
 
@@ -23,7 +23,6 @@ factory = Factory(classes_map)
 visitor = ByteRepVisitorTest()
 
 
-# testing TargetAsset
 @pytest.fixture
 def repo() -> Repository:
     return MagicMock()

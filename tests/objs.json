@@ -1,121 +1,104 @@
 {
-    "nodes": [
-        {
-            "name": "NODE1",
-            "client_id": "client1",
-            "description" : "node1 description",
-            "template" : "node1Template"
-        }, 
-        {
-            "name": "NODE2",
-            "client_id": "client2",
-            "description" : "node2 description",
-            "template" : "node2Template"
-        },
-        {
-            "name": "NODE3",
-            "client_id": "client3",
-            "description" : "node3 description",
-            "template" : "node3Template"
-        }
-    ],
-    "items": 
-    [
+  "assetservers": [
     {
-        "name": "ITEM1",
-        "client_id": "client4",
-        "description" : "item1 description",
-        "type": "str"
+      "name": "assetserver1",
+      "client_id": "client10",
+      "description": "assetserver1 description",
+      "source_url": "http://whatever.com/"
     },
     {
-        "name": "ITEM2",
-        "client_id": "client5",
-        "description" : "item2 description",
-        "type": "int"
-        },
-    {
-        "name": "ITEM3",
-        "client_id": "client6",
-        "description" : "item3 description",
-        "type": "float"
-    },
-    {
-        "name": "ITEM4",
-        "client_id": "client7",
-        "description" : "item4 description",
-        "type": "timestamp"
-    },
-    {
-        "name": "ITEM5",
-        "client_id": "client8",
-        "description" : "item5 description",
-        "type": "bool"
-    },
-    {
-        "name": "ITEM6",
-        "client_id": "client9",
-        "description" : "item66 description",
-        "type": "bytes"
+      "name": "assetserver2",
+      "client_id": "client11",
+      "description": "assetserver2 description",
+      "source_url": "http://example2.com/"
     }
-],
-"assetservers": 
-[
-{
-    "name": "assetserver1",
-    "client_id": "client10",
-    "description" : "assetserver1 description",
-    "source_url": "http://whatever.com/"
-},
-{
-    "name": "assetserver2",
-    "client_id": "client11",
-    "description" : "assetserver2 description",
-    "source_url": "http://example2.com/"
-}
-],
-"databases": 
-[
-{
-    "name": "database1",
-    "client_id": "client11",
-    "description" : "db1 description",
-    "host": "s5a9am01"
-},
-{
-    "name": "database2",
-    "client_id": "client12",
-    "description" : "database2 description",
-    "host": "s8ddam01"
-}
-],
-"views": 
-[
-{
-    "name": "view1",
-    "client_id": "client13",
-    "description" : "view1 description",
-    "view_str": "viewN1"
-},
-{
-    "name": "view2",
-    "client_id": "client14",
-    "description" : "view2 description",
-    "view_str": "viewN2"
-}
-],
-"procs": 
-[
-{
-    "name": "proc1",
-    "client_id": "client15",
-    "description" : "proc1 description",
-    "proc_str": "processing1"
-},
-{
-    "name": "proc2",
-    "client_id": "client16",
-    "description" : "proc2 description",
-    "proc_str": "processing2"
-}
-]
+  ],
+  "databases": [
+    {
+      "name": "database1",
+      "client_id": "client11",
+      "description": "db1 description",
+      "host": "s5a9am01"
+    },
+    {
+      "name": "database2",
+      "client_id": "client12",
+      "description": "database2 description",
+      "host": "s8ddam01"
+    }
+  ],
+  "nodes": [
+    {
+      "name": "NODE1",
+      "client_id": "client1",
+      "description": "node1 description",
+      "template": "node1Template"
+    },
+    {
+      "name": "NODE2",
+      "client_id": "client2",
+      "description": "node2 description",
+      "template": "node2Template"
+    },
+    {
+      "name": "NODE3",
+      "client_id": "client3",
+      "description": "node3 description",
+      "template": "node3Template"
+    }
+  ],
+  "items": [
+    {
+      "name": "ITEM1",
+      "client_id": "client4",
+      "description": "item1 description",
+      "type": "str"
+    },
+    {
+      "name": "ITEM2",
+      "client_id": "client5",
+      "description": "item2 description",
+      "type": "int"
+    },
+    {
+      "name": "ITEM3",
+      "client_id": "client6",
+      "description": "item3 description",
+      "type": "float"
+    },
+    {
+      "name": "ITEM4",
+      "client_id": "client7",
+      "description": "item4 description",
+      "type": "timestamp"
+    },
+    {
+      "name": "ITEM5",
+      "client_id": "client8",
+      "description": "item5 description",
+      "type": "bool"
+    },
+    {
+      "name": "ITEM6",
+      "client_id": "client9",
+      "description": "item66 description",
+      "type": "bytes"
+    }
+  ],
+  "views": [
+    {
+      "name": "view1",
+      "client_id": "client13",
+      "description": "view1 description",
+      "view_str": "viewN1",
+      "proc_str": "processing1"
+    },
+    {
+      "name": "view2",
+      "client_id": "client14",
+      "description": "view2 description",
+      "view_str": "viewN2",
+      "proc_str": "processing1"
+    }
+  ]
 }

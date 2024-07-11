@@ -1,7 +1,7 @@
 from collections.abc import Container
 from dataclasses import dataclass
 
-from pydantic import BaseModel
+from pydantic import AnyUrl, BaseModel
 
 from am.schemas.mapclass import make_map
 from am.visitor import GetByteRep, Visitable, Visitor
@@ -18,6 +18,9 @@ class ByteRepVisitorTest(Visitor):
 
 
 class Label(BaseModel, Visitable):
+    name: str
+    client_id: str
+    description: str
 
     @classmethod
     def base_type(cls) -> str:
@@ -30,6 +33,8 @@ class Label(BaseModel, Visitable):
 
 class BaseServer(Label):
 
+    source_url: AnyUrl
+
     @classmethod
     def base_type(cls) -> str:
         return "server"
@@ -40,6 +45,9 @@ class BaseServer(Label):
 
 
 class BaseRoot(Label):
+
+    host: str
+
     @classmethod
     def base_type(cls) -> str:
         return "root"
@@ -50,6 +58,10 @@ class BaseRoot(Label):
 
 
 class BaseElement(Label):
+
+    view_str: str
+    proc_str: str
+
     @classmethod
     def base_type(cls) -> str:
         return "element"
@@ -60,6 +72,9 @@ class BaseElement(Label):
 
 
 class BaseNode(Label):
+
+    template: str
+
     @classmethod
     def base_type(cls) -> str:
         return "node"
@@ -70,6 +85,9 @@ class BaseNode(Label):
 
 
 class BaseItem(Label):
+
+    type: str
+
     @classmethod
     def base_type(cls) -> str:
         return "item"
