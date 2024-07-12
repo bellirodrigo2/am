@@ -20,7 +20,7 @@ class Singleton(type):
 
 
 @dataclass(frozen=True, slots=True)
-class Factory(metaclass=Singleton):
+class Factory:
     _classmap: Mapping[str, type]
 
     def __post_init__(self) -> None:

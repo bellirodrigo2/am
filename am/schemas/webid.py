@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Self
 
 from am.schemas.id_.objectid import ObjectId
@@ -26,7 +26,7 @@ def webid_from_bytes(id: bytes) -> tuple[bytes, ObjectId]:
 @dataclass(frozen=True)
 class WebId:
     _pref: bytes
-    _bid: ObjectId
+    _bid: ObjectId = field(default_factory=ObjectId)
 
     @classmethod
     def make(cls, input: bytes | str) -> Self:

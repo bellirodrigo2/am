@@ -52,37 +52,43 @@
       "name": "ITEM1",
       "client_id": "client4",
       "description": "item1 description",
-      "type": "str"
+      "data_point": "str",
+      "data_type": "str"
     },
     {
       "name": "ITEM2",
       "client_id": "client5",
       "description": "item2 description",
-      "type": "int"
+      "data_point": "int",
+      "data_type": "str"
     },
     {
       "name": "ITEM3",
       "client_id": "client6",
       "description": "item3 description",
-      "type": "float"
+      "data_point": "float",
+      "data_type": "str"
     },
     {
       "name": "ITEM4",
       "client_id": "client7",
       "description": "item4 description",
-      "type": "timestamp"
+      "data_point": "timestamp",
+      "data_type": "str"
     },
     {
       "name": "ITEM5",
       "client_id": "client8",
       "description": "item5 description",
-      "type": "bool"
+      "data_point": "bool",
+      "data_type": "str"
     },
     {
       "name": "ITEM6",
       "client_id": "client9",
       "description": "item66 description",
-      "type": "bytes"
+      "data_point": "bytes",
+      "data_type": "str"
     }
   ],
   "views": [

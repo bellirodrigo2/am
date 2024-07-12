@@ -1,20 +1,31 @@
+from collections.abc import Mapping
 from functools import partial
-from typing import Generator
+from typing import Any, Generator
+from uuid import uuid1
 
-from pydantic import Field
+from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
+from pydantic.alias_generators import to_camel
 
-from am.schemas.basenode import BaseClass
 from am.schemas.config import get_schema_settings
-from am.schemas.id_.objectid import ObjectId
 
-# from am.schemas.webid import WebId
+ObjConfig = partial(
+    ConfigDict,
+    alias_generator=AliasGenerator(
+        alias=to_camel, validation_alias=to_camel, serialization_alias=to_camel
+    ),
+    populate_by_name=True,
+    use_enum_values=True,
+    frozen=True,
+    str_strip_whitespace=True,
+)
+
 
 SPECIAL_CHARS = ["*", "?", ";", "{", "}", "[", "]", "|", "\\", "`", """, """, ":"]
 INVALID_CHARS = set(SPECIAL_CHARS)
 INVALID_CHARS.add("/")
 
 
-def make_name(name) -> Generator[str, None, None]:
+def make_name(name: str) -> Generator[str, None, None]:
     i = 0
     while True:
         yield f"{name}{i}"
@@ -25,37 +36,37 @@ settings = get_schema_settings()
 
 name_gen = make_name(settings.default_name)
 
-NameField = partial(
-    Field,
-    description="Name Field Description",
-    min_length=settings.name_min_length,
-    max_length=settings.name_max_length,
-)
 
-DescriptionField = partial(
-    Field,
-    description="Description Field Description",
-    min_length=settings.description_min_length,
-    max_length=settings.description_max_length,
-)
+class Label(BaseModel):
 
-ClientIdField = partial(
-    Field,
-    description="ClientId Field Description",
-    min_length=settings.clientid_min_length,
-    max_length=settings.clientid_max_length,
-)
+    model_config = ObjConfig()
 
-
-class InputLabel(BaseClass):
-
-    name: str | None = NameField(default_factory=lambda: next(name_gen))
-    client_id: str | None = ClientIdField(default_factory=ObjectId)
-    description: str | None = DescriptionField(default=settings.default_description)
+    name: str | None = Field(
+        description="Name Field Description",
+        min_length=settings.name_min_length,
+        max_length=settings.name_max_length,
+        default=None,
+    )
+    client_id: str | None = Field(
+        description="ClientId Field Description",
+        min_length=settings.clientid_min_length,
+        max_length=settings.clientid_max_length,
+        default=None,
+    )
+    description: str | None = Field(
+        description="Description Field Description",
+        min_length=settings.description_min_length,
+        max_length=settings.description_max_length,
+        default=None,
+    )
 
 
-class UpdateLabel(BaseClass):
+def make_input_fields(**fields: Any) -> Mapping[str, Any]:
 
-    name: str | None = NameField(default=None)
-    description: str | None = DescriptionField(default=None)
-    client_id: str | None = ClientIdField(default=None)
+    if "name" not in fields:
+        fields["name"] = next(name_gen)
+    if "client_id" not in fields:
+        fields["client_id"] = uuid1()
+    if "description" not in fields:
+        fields["description"] = settings.default_description
+    return fields

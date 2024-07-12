@@ -2,9 +2,7 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import BaseNode
-
-###############################################################################
+from am.schemas.baseclass import BaseNode
 
 
 class Node(BaseNode):

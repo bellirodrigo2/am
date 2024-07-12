@@ -1,10 +1,10 @@
 from pydantic import Field
 
-from am.schemas.basenode import ServerElement
+from am.schemas.baseclass import BaseRoot
 from am.schemas.datatype import DataType
 
 
-class Point(ServerElement):
+class Point(BaseRoot):
     # @classmethod
     # def byte_rep(cls) -> bytes:
     # return b"seel"

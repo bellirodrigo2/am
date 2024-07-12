@@ -2,12 +2,12 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import NodeElement
+from am.schemas.baseclass import TreeElement
 
 ###############################################################################
 
 
-class View(NodeElement):
+class View(TreeElement):
 
     # @classmethod
     # def byte_rep(cls) -> bytes:

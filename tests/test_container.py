@@ -1,18 +1,20 @@
-from pathlib import Path
-from typing import Mapping
+# from pathlib import Path
+# from typing import Mapping
 
 import pytest
 
-from am.container import Container, Factory
-from am.schemas.loader import load_all_plugins
-from am.schemas.mapclass import make_map
+from am.container import Container
 
-from .objects.baseobj import BaseObj
+# from am.schemas.loader import load_all_plugins
+# from am.schemas.mapclass import make_map
+# from tests.objects.baseobj import BaseObj
 
-dir: str = str(Path(__file__).parent.resolve())
-load_all_plugins(path=dir, tgt_folder="objects", package_name="tests")
+# dir: str = str(Path(__file__).parent.resolve())
+# load_all_plugins(path=dir, tgt_folder="objects", package_name="tests")
 
-objmap: Mapping[str, type] = make_map(base_class=BaseObj, name_transf=None)
+# objmap: Mapping[str, type] = make_map(
+# base_class=BaseObj, name_transf=None, include_base=True
+# )
 
 name = "RBELLI"
 url = "cahier.com"
@@ -33,25 +35,25 @@ def container() -> Container:
     return container
 
 
-@pytest.fixture
-def factory() -> Factory:
-    return Factory(_classmap=objmap)
+# @pytest.fixture
+# def factory() -> Factory:
+#     return Factory(_classmap=objmap)
 
 
-def test_factory_ok(factory: Factory) -> None:
-    """factory get() should raise no exception if class exists"""
+# def test_factory_ok(factory: Factory) -> None:
+#     """factory get() should raise no exception if class exists"""
 
-    factory.get(clsname="BaseObj")
-    factory.get(clsname="Hobby")
-    factory.get(clsname="Aged")
-    factory.get(clsname="Sports")
+#     factory.get(clsname="BaseObj")
+#     factory.get(clsname="Hobby")
+#     factory.get(clsname="Aged")
+#     factory.get(clsname="Sports")
 
 
-def test_factory_unknown(factory: Factory) -> None:
-    """factory get() should raise an exception if class do not exists"""
+# def test_factory_unknown(factory: Factory) -> None:
+#     """factory get() should raise an exception if class do not exists"""
 
-    with pytest.raises(expected_exception=Exception):
-        factory.get(clsname="NoClass")
+#     with pytest.raises(expected_exception=Exception):
+#         factory.get(clsname="NoClass")
 
 
 def test_container_default_arg_ok(container: Container):

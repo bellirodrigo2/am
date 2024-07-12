@@ -2,10 +2,8 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import BaseItem
+from am.schemas.baseclass import BaseItem
 from am.schemas.datatype import DataType
-
-###############################################################################
 
 
 class Item(BaseItem):

@@ -2,9 +2,7 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import BaseRoot
-
-###############################################################################
+from am.schemas.baseclass import BaseRoot
 
 
 class DataBase(BaseRoot):

@@ -1,86 +1,67 @@
 """"""
 
 from collections.abc import Iterable
-from dataclasses import dataclass, field
+from dataclasses import dataclass
+from typing import Callable
 
-from am.container import Factory
-from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import (
     IdInterface,
     JsonObj,
-    NodeClassInterface,
     NodeInterface,
     ReadAllOptions,
     Repository,
-    VisitorInterface,
 )
+from am.schemas.nodefuncs import make_id
 
 
 @dataclass(frozen=True, slots=True)
 class TargetAsset:
 
     _repo: Repository
-    _factory: Factory
-    _byterep: VisitorInterface
-    _target: str
-    _target_cls: NodeClassInterface = field(init=False)
-    _webid: IdInterface
+    _check_webid: Callable[[str, IdInterface], None]
+    _fields: Callable[[str], Iterable[str]]
+
+    target: str
+    webid: IdInterface
 
     def __post_init__(self) -> None:
-
-        object.__setattr__(self, "_target_cls", self._factory.get(self._target))
-
-        def check_webid(target: NodeClassInterface, webid: IdInterface) -> None:
-            if self._byterep.visit(target) == webid.prefix:
-                return
-            raise InconsistentIdTypeError(target=target.__name__, webid=str(webid))
-
-        check_webid(target=self._target_cls, webid=self._webid)
+        self._check_webid(self.target, self.webid)
 
 
 @dataclass(frozen=True, slots=True)
 class ParentChildAsset(TargetAsset):
 
-    _child: str
-    _child_cls: NodeClassInterface = field(init=False)
+    _check_hierarchy: Callable[[str, str], None]
+    child: str
 
     def __post_init__(self) -> None:
 
         TargetAsset.__post_init__(self)
-
-        object.__setattr__(self, "_child_cls", self._factory.get(self._child))
-
-        def check_hierarchy(
-            target: NodeClassInterface, child: NodeClassInterface
-        ) -> None:
-            if child.base_type() in target.children():
-                return
-            raise ObjHierarchyError(parent=target.__name__, child=child.__name__)
-
-        check_hierarchy(target=self._target_cls, child=self._child_cls)
+        self._check_hierarchy(self.target, self.child)
 
 
 @dataclass(frozen=True, slots=True)
 class CreateAsset(ParentChildAsset):
 
+    _make: Callable[..., NodeInterface]
+
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        obj: NodeInterface = self._child_cls(**inpobj)
+        obj: NodeInterface = self._make(target=self.child, **inpobj)
+        new_webid: IdInterface = make_id(target=self.child)
 
-        webid: IdInterface = self._webid.make(
-            input=self._byterep.visit(self._child_cls)
-        )
-        self._repo.create(obj=obj, id=webid)
+        self._repo.create(obj=obj, id=new_webid)
 
-        return {"webid": webid}
+        return {"webid": new_webid}
 
 
 class ReadOneAsset(TargetAsset):
 
     def __call__(self, *fields: str) -> JsonObj:
 
-        # TODO SE NAO VIER NADA, LISTA OS FIELDS ?????
-        return self._repo.read(*fields)
+        sel_fields = fields if fields else self._fields(self.target)
+
+        return self._repo.read(*sel_fields)
 
 
 class ReadManyAsset(ParentChildAsset):

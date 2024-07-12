@@ -1,4 +1,4 @@
-from collections.abc import Callable
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -7,13 +7,22 @@ from am.interfaces import VisitableInterface, VisitorInterface
 
 class Visitable:
 
-    @classmethod
-    def visitor_rep(cls) -> str:
-        return cls.__name__.lower()
+    @property
+    def visitor_rep(self) -> str:
+        return self.__class__.__name__.lower()
 
     def accept(self, visitor: VisitorInterface) -> None:
 
         visitor.visit(self)
+
+
+@dataclass(frozen=True, slots=True)
+class VisitableString(Visitable):
+    key: str
+
+    @property
+    def visitor_rep(self) -> str:
+        return self.key
 
 
 class NonImplementedVisitMethod(Exception): ...
@@ -21,13 +30,9 @@ class NonImplementedVisitMethod(Exception): ...
 
 class Visitor:
 
-    def visit(self, element: VisitableInterface | type[VisitableInterface]) -> Any:
+    def visit(self, element: VisitableInterface) -> Any:
 
-        rep = (
-            element.visitor_rep()
-            if isinstance(element, type)
-            else element.__class__.visitor_rep()
-        )
+        rep = element.visitor_rep
         try:
             fn = getattr(self, rep)
         except AttributeError:
@@ -36,52 +41,20 @@ class Visitor:
         return fn(element)
 
 
-GetByteRep = Callable[[Any], bytes]
+class VisitorDefault(ABC):
 
+    @abstractmethod
+    def __run_default__(self, element: VisitableInterface) -> Any: ...
 
-@dataclass()
-class ByteRepVisitor(Visitor):
-    assetserver: GetByteRep = lambda x: b"asse"
-    dataserver: GetByteRep = lambda x: b"dase"
-    database: GetByteRep = lambda x: b"daba"
-    keywords: GetByteRep = lambda x: b"kewo"
-    points: GetByteRep = lambda x: b"pont"
-    view: GetByteRep = lambda x: b"view"
-    node: GetByteRep = lambda x: b"node"
-    item: GetByteRep = lambda x: b"item"
+    def visit(self, element: VisitableInterface) -> Any:
 
+        rep = element.visitor_rep
 
-if __name__ == "__main__":
+        try:
+            fn = getattr(self, rep)
+        except AttributeError:
+            raise NonImplementedVisitMethod(
+                f"Visit Method not implemented for {rep}, on Visitor {self.__class__.__name__}"
+            )
 
-    @dataclass(slots=True)
-    class Person(Visitable):
-        name: str
-        age: int
-
-    @dataclass(slots=True)
-    class Car(Visitable):
-        brand: str
-        power: int
-
-    def print_person(x: Person) -> None:
-        print(x.name, x.age)
-
-    def print_car(x: Car) -> None:
-        print(x.brand, x.power)
-
-    @dataclass(slots=True)
-    class VisitorPrint(Visitor):
-        person: Callable[[Person], None] = print_person
-        car: Callable[[Car], None] = print_car
-
-    pa = Person(name="John", age=42)
-    pb = Person(name="Jack", age=26)
-
-    ca = Car(brand="BMW", power=2000)
-    cb = Car(brand="Fiat", power=1000)
-
-    visitor = VisitorPrint()
-    visitor.visit(pa)
-    visitor.visit(pb)
-    visitor.visit(ca)
-    visitor.visit(cb)
+        return fn(element) if fn is not None else self.__run_default__(element=element)

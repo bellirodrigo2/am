@@ -2,7 +2,7 @@
 
 from pydantic import AnyUrl, Field
 
-from am.schemas.basenode import BaseServer
+from am.schemas.baseclass import BaseServer
 
 
 class AssetServer(BaseServer):

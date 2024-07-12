@@ -1,6 +1,6 @@
 """ Asset Manager Interfaces"""
 
-from collections.abc import Container, Iterable, Mapping
+from collections.abc import Iterable, Mapping
 from enum import Enum
 from typing import Any, Protocol, Self
 
@@ -23,29 +23,17 @@ JsonObj = Mapping[str, Any]
 
 class VisitableInterface(Protocol):
 
-    @classmethod
-    def visitor_rep(cls) -> str: ...
+    @property
+    def visitor_rep(self) -> str: ...
 
     def accept(self, visitor: Any) -> None: ...
 
 
 class VisitorInterface(Protocol):
-    def visit(self, element: VisitableInterface | type[VisitableInterface]) -> Any: ...  # type: ignore
+    def visit(self, element: VisitableInterface) -> Any: ...  # type: ignore
 
 
-class NodeInterface(VisitableInterface, Protocol):
-
-    @classmethod
-    def base_type(cls) -> str: ...
-
-    @classmethod
-    def children(cls) -> Container[str]: ...
-
-    # @classmethod
-    # def byte_rep(cls) -> bytes: ...
-
-
-NodeClassInterface = type[NodeInterface]
+NodeInterface = VisitableInterface
 
 
 class SortOrder(Enum):

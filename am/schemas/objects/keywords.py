@@ -2,9 +2,7 @@
 
 from pydantic import Field
 
-from am.schemas.basenode import BaseElement
-
-###############################################################################
+from am.schemas.baseclass import BaseElement
 
 
 class Keywords(BaseElement):
