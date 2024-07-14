@@ -49,19 +49,19 @@ class SortOrder(Enum):
     Desc = "desc"
 
 
-class ReadAllOptions(Protocol):
-
-    field_filter: Mapping[str, str] | None
-    field_filter_like: Mapping[str, str] | None
-    search_full_hierarchy: bool | None
-    sort_field: str | None
-    sort_order: SortOrder | None
-    start_index: int | None
-    max_count: int | None
-    selected_fields: Iterable[str] | None
+start = int
+max = int
+field = str
 
 
-###############################################################################
+class ReadAllOptionsInterface(Protocol):
+
+    field_filter: Mapping[field, str] | None
+    field_filter_like: Mapping[field, str] | None
+    search_full_hierarchy: bool
+    sort_options: tuple[tuple[field, SortOrder], ...] | None
+    pag_options: tuple[start, max] | None
+    selected_fields: Iterable[field] | None
 
 
 class CreateAssetInterface(Protocol):
@@ -77,7 +77,7 @@ class ReadOneAssetInterface(Protocol):
 
 
 class ReadManyAssetInterface(Protocol):
-    def __call__(self, sel_fields: ReadAllOptions | None) -> JsonObj: ...
+    def __call__(self, sel_fields: ReadAllOptionsInterface | None) -> JsonObj: ...
 
 
 class DeleteAssetInterface(Protocol):
@@ -103,7 +103,7 @@ class Repository(Protocol):
 
     def read(self, *fields: str) -> JsonObj: ...
 
-    def list(self, options: ReadAllOptions | None) -> Iterable[JsonObj]: ...
+    def list(self, options: ReadAllOptionsInterface | None) -> Iterable[JsonObj]: ...
 
     def update(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj: ...
 

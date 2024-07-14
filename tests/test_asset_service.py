@@ -69,19 +69,13 @@ def test_create_asset_ok(
         target=target,
         webid=webid,
         child=child,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
-        # _check_hierarchy=check_node_hierarchy,
-        # _make=make_node,
     )
     for obj in objs:
         repo.reset_mock()  # type: ignore
         res: Mapping[str, Any] = create(obj)
         repo.create.assert_called_once()  # type: ignore
         assert "webid" in res
-
-        # obj_type = visitor.visit(factory.get(child))
-        # assert res["webid"].prefix == obj_type
+        create._rules.check_id(child, res["webid"])  # type: ignore
 
 
 @pytest.mark.parametrize(
@@ -121,10 +115,6 @@ def test_create_asset_nok(
         target=target,
         webid=webid,
         child=child,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
-        # _check_hierarchy=check_node_hierarchy,
-        # _make=make_node,
     )
     for obj in inputs["assetservers"]:
         with pytest.raises(expected_exception=ValidationError):
@@ -147,8 +137,6 @@ def test_readone_asset_ok(target: str, webid: WebId, repo: Repository):
         _rules=rules,
         target=target,
         webid=webid,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
     )
     repo.reset_mock()  # type: ignore
     readone()
@@ -171,9 +159,6 @@ def test_readmany_asset_ok(target: str, webid: WebId, repo: Repository, child: s
         target=target,
         webid=webid,
         child=child,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
-        # _check_hierarchy=check_node_hierarchy,
     )
 
     repo.reset_mock()  # type: ignore

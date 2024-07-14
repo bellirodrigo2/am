@@ -1,6 +1,6 @@
 """"""
 
-from collections.abc import Iterable
+from collections.abc import Iterable, Mapping
 from dataclasses import dataclass
 
 from am.interfaces import (
@@ -8,8 +8,9 @@ from am.interfaces import (
     JsonObj,
     NodeInterface,
     ObjectsRules,
-    ReadAllOptions,
+    ReadAllOptionsInterface,
     Repository,
+    SortOrder,
 )
 
 
@@ -60,12 +61,27 @@ class ReadOneAsset(TargetAsset):
         return self._repo.read(*sel_fields)
 
 
+class ReadAllOptions:
+
+    field_filter: Mapping[str, str] | None = None
+    field_filter_like: Mapping[str, str] | None = None
+    search_full_hierarchy: bool = False
+    sort_options: tuple[tuple[str, SortOrder], ...] | None = None
+    pag_options: tuple[int, int] | None = None
+    selected_fields: Iterable[str] | None = None
+
+
 class ReadManyAsset(TargetChildAsset):
 
-    def __call__(self, options: ReadAllOptions | None = None) -> Iterable[JsonObj]:
+    def __call__(
+        self, options: ReadAllOptionsInterface | None = None
+    ) -> Iterable[JsonObj]:
 
-        # TODO VER AQUI OQUE FAZER SE VIER NONE
-
+        _options: ReadAllOptionsInterface = options or ReadAllOptions()
+        sel_fields: Iterable[str] = _options.selected_fields or self._rules.get_fields(
+            target=self.target
+        )
+        _options.selected_fields = sel_fields
         return self._repo.list(options=options)
 
 

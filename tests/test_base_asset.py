@@ -7,8 +7,6 @@ import pytest
 from am.asset import TargetAsset, TargetChildAsset
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import Repository
-
-# from am.schemas.nodefuncs import check_node_hierarchy, check_webid, get_fields
 from am.schemas.objrules import ObjectsRules
 from am.schemas.webid import WebId
 
@@ -36,8 +34,6 @@ def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
         _rules=rules,
         target=target,
         webid=webid,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
     )
 
 
@@ -59,8 +55,6 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
             _rules=rules,
             target=target,
             webid=webid,
-            # _check_webid=check_webid,
-            # _fields=get_fields,
         )
 
 
@@ -80,9 +74,6 @@ def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str
         target=target,
         webid=webid,
         child=child,
-        # _check_webid=check_webid,
-        # _fields=get_fields,
-        # _check_hierarchy=check_node_hierarchy,
     )
 
 
@@ -104,7 +95,4 @@ def test_parent_asset_nok(target: str, webid: WebId, repo: Repository, child: st
             target=target,
             webid=webid,
             child=child,
-            # _check_webid=check_webid,
-            # _fields=get_fields,
-            # _check_hierarchy=check_node_hierarchy,
         )
