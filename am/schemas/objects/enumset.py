@@ -1,20 +1,14 @@
-""" View Object """
-
 from collections.abc import Iterable
-
-from pydantic import Field
 
 from am.schemas.baseclass import BaseElement
 
 
-class View(BaseElement):
+class EnumSet(BaseElement):
 
     @classmethod
     def byte_rep(cls) -> bytes:
-        return b"view"
+        return b"enum"
 
     @classmethod
     def parent_constr(cls) -> Iterable[str] | None:
-        return ["node", "item"]
-
-    view_str: str = Field()
+        return ["database"]

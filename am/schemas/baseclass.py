@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from collections.abc import Container
+from typing import Iterable
 
 from am.schemas.label import Label
 from am.visitor import Visitable
@@ -11,19 +12,17 @@ class BaseClass(ABC, Label, Visitable):
     @abstractmethod
     def base_type(cls) -> str: ...
 
-    # return "base"
-
     @classmethod
     @abstractmethod
     def children(cls) -> Container[str]: ...
-
-    # return []
 
     @classmethod
     @abstractmethod
     def byte_rep(cls) -> bytes: ...
 
-    # return b"base"
+    @classmethod
+    def parent_constr(cls) -> Iterable[str] | None:
+        return None
 
 
 class BaseServer(BaseClass):
@@ -34,7 +33,7 @@ class BaseServer(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["element", "serverelement", "root"]
+        return ["element", "root"]
 
 
 class BaseRoot(BaseClass):
@@ -44,7 +43,7 @@ class BaseRoot(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["element", "rootelement", "node"]
+        return ["element", "node"]
 
 
 class BaseElement(BaseClass):
@@ -57,6 +56,26 @@ class BaseElement(BaseClass):
         return ["elementfield"]
 
 
+class BaseNode(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "node"
+
+    @classmethod
+    def children(cls) -> Container[str]:
+        return ["node", "item", "element"]
+
+
+class BaseItem(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "item"
+
+    @classmethod
+    def children(cls) -> Container[str]:
+        return ["item", "element"]
+
+
 class ElementField(BaseClass):
     @classmethod
     def base_type(cls) -> str:
@@ -67,51 +86,11 @@ class ElementField(BaseClass):
         return []
 
 
-class ServerElement(BaseElement):
-    @classmethod
-    def base_type(cls) -> str:
-        return "serverelement"
+# class Strict(BaseClass):
+#     @classmethod
+#     def base_type(cls) -> str:
+#         return "strict"
 
-
-class RootElement(BaseElement):
-    @classmethod
-    def base_type(cls) -> str:
-        return "rootelement"
-
-
-class TreeElement(BaseElement):
-    @classmethod
-    def base_type(cls) -> str:
-        return "treeelement"
-
-
-class NodeElement(BaseElement):
-    @classmethod
-    def base_type(cls) -> str:
-        return "nodeelement"
-
-
-class ItemElement(BaseElement):
-    @classmethod
-    def base_type(cls) -> str:
-        return "itemelement"
-
-
-class BaseNode(BaseClass):
-    @classmethod
-    def base_type(cls) -> str:
-        return "node"
-
-    @classmethod
-    def children(cls) -> Container[str]:
-        return ["node", "item", "element", "nodeelement", "treeelement"]
-
-
-class BaseItem(BaseClass):
-    @classmethod
-    def base_type(cls) -> str:
-        return "item"
-
-    @classmethod
-    def children(cls) -> Container[str]:
-        return ["item", "element", "itemelement", "treeelement"]
+#     @classmethod
+#     def children(cls) -> Container[str]:
+#         return []

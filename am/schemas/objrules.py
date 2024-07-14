@@ -8,6 +8,7 @@ from am.schemas.baseclass import BaseClass
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.database import DataBase
 from am.schemas.objects.dataserver import DataServer
+from am.schemas.objects.enumset import EnumSet
 from am.schemas.objects.item import Item
 from am.schemas.objects.keywords import Keywords
 from am.schemas.objects.node import Node
@@ -29,6 +30,7 @@ class ObjectsRules:
     dataserver: type[BaseClass] = DataServer
     database: type[BaseClass] = DataBase
     keywords: type[BaseClass] = Keywords
+    enumset: type[BaseClass] = EnumSet
     point: type[BaseClass] = Point
     view: type[BaseClass] = View
     node: type[BaseClass] = Node
@@ -57,7 +59,12 @@ class ObjectsRules:
         child_cls: type[BaseClass] = getattr(self, child)
 
         if child_cls.base_type() in target_cls.children():
-            return
+            par_constr: Iterable[str] | None = child_cls.parent_constr()
+            if par_constr is None or (
+                target_cls.base_type() in par_constr
+                or target_cls.__name__.lower() in par_constr
+            ):
+                return
         raise ObjHierarchyError(parent=target, child=child)
 
     def get_fields(self, target: str) -> Iterable[str]:

@@ -65,6 +65,8 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
         ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "keywords"),
         ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "node"),
         ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "item"),
+        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "view"),
+        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "enumset"),
     ],
 )
 def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
@@ -84,6 +86,8 @@ def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str
         ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "assetserver"),
         ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "database"),
         ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "node"),
+        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "view"),
+        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "enumset"),
     ],
 )
 def test_parent_asset_nok(target: str, webid: WebId, repo: Repository, child: str):
