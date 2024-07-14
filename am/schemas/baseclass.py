@@ -1,18 +1,29 @@
+from abc import ABC, abstractmethod
 from collections.abc import Container
 
 from am.schemas.label import Label
 from am.visitor import Visitable
 
 
-class BaseClass(Label, Visitable):
+class BaseClass(ABC, Label, Visitable):
 
     @classmethod
-    def base_type(cls) -> str:
-        return "base"
+    @abstractmethod
+    def base_type(cls) -> str: ...
+
+    # return "base"
 
     @classmethod
-    def children(cls) -> Container[str]:
-        return []
+    @abstractmethod
+    def children(cls) -> Container[str]: ...
+
+    # return []
+
+    @classmethod
+    @abstractmethod
+    def byte_rep(cls) -> bytes: ...
+
+    # return b"base"
 
 
 class BaseServer(BaseClass):
@@ -40,6 +51,16 @@ class BaseElement(BaseClass):
     @classmethod
     def base_type(cls) -> str:
         return "element"
+
+    @classmethod
+    def children(cls) -> Container[str]:
+        return ["elementfield"]
+
+
+class ElementField(BaseClass):
+    @classmethod
+    def base_type(cls) -> str:
+        return "elementfield"
 
     @classmethod
     def children(cls) -> Container[str]:
@@ -94,54 +115,3 @@ class BaseItem(BaseClass):
     @classmethod
     def children(cls) -> Container[str]:
         return ["item", "element", "itemelement", "treeelement"]
-
-
-# NodeType = Literal[
-#     "server",
-#     "root",
-#     "element",
-#     "serverelement",
-#     "rootelement",
-#     "treeelement",
-#     "nodeelement",
-#     "itemelement",
-#     "node",
-#     "item",
-# ]
-
-# GetBaseNode = Callable[[], NodeType]
-
-
-# @dataclass(slots=True)
-# class BaseNodeVisitor(Visitor):
-#     assetserver: GetBaseNode = lambda: "server"
-#     dataserver: GetBaseNode = lambda: "server"
-#     database: GetBaseNode = lambda: "root"
-#     keywords: GetBaseNode = lambda: "element"
-#     points: GetBaseNode = lambda: "serverelement"
-#     view: GetBaseNode = lambda: "nodeelement"
-#     node: GetBaseNode = lambda: "node"
-#     item: GetBaseNode = lambda: "item"
-
-
-# GetNodeChildren = Callable[[], Container[NodeType]]
-
-
-# @dataclass(slots=True)
-# class ChildrenNodeVisitor(Visitor):
-#     server: GetNodeChildren = lambda: ["root", "serverelement", "element"]
-#     root: GetNodeChildren = lambda: ["element", "rootelement", "node"]
-#     element: GetNodeChildren = lambda: []
-#     serverelement: GetNodeChildren = lambda: []
-#     rootelement: GetNodeChildren = lambda: []
-#     treeelement: GetNodeChildren = lambda: []
-#     nodeelement: GetNodeChildren = lambda: []
-#     itemlement: GetNodeChildren = lambda: []
-#     node: GetNodeChildren = lambda: [
-#         "node",
-#         "item",
-#         "element",
-#         "nodeelement",
-#         "treeelement",
-#     ]
-#     item: GetNodeChildren = lambda: ["item", "element", "itemelement", "treeelement"]

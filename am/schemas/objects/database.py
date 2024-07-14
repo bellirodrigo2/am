@@ -6,8 +6,9 @@ from am.schemas.baseclass import BaseRoot
 
 
 class DataBase(BaseRoot):
-    # @classmethod
-    # def byte_rep(cls) -> bytes:
-    # return b"dbas"
+
+    @classmethod
+    def byte_rep(cls) -> bytes:
+        return b"daba"
 
     host: str = Field()

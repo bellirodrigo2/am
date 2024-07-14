@@ -1,4 +1,3 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any
 
@@ -25,7 +24,8 @@ class VisitableString(Visitable):
         return self.key
 
 
-class NonImplementedVisitMethod(Exception): ...
+class NonImplementedVisitMethod(Exception):
+    pass
 
 
 class Visitor:
@@ -36,25 +36,7 @@ class Visitor:
         try:
             fn = getattr(self, rep)
         except AttributeError:
-            raise NonImplementedVisitMethod(f"Visit Method not implemented for {rep=}")
+            err = f"Visit Method not implemented for {rep=}"
+            raise NonImplementedVisitMethod(err)
 
         return fn(element)
-
-
-class VisitorDefault(ABC):
-
-    @abstractmethod
-    def __run_default__(self, element: VisitableInterface) -> Any: ...
-
-    def visit(self, element: VisitableInterface) -> Any:
-
-        rep = element.visitor_rep
-
-        try:
-            fn = getattr(self, rep)
-        except AttributeError:
-            raise NonImplementedVisitMethod(
-                f"Visit Method not implemented for {rep}, on Visitor {self.__class__.__name__}"
-            )
-
-        return fn(element) if fn is not None else self.__run_default__(element=element)

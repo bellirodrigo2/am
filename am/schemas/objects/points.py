@@ -5,9 +5,10 @@ from am.schemas.datatype import DataType
 
 
 class Point(BaseRoot):
-    # @classmethod
-    # def byte_rep(cls) -> bytes:
-    # return b"seel"
+
+    @classmethod
+    def byte_rep(cls) -> bytes:
+        return b"seel"
 
     server_host: str = Field()
     db_name: str

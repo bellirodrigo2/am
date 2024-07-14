@@ -4,11 +4,15 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from am.asset import ParentChildAsset, TargetAsset
+from am.asset import TargetAsset, TargetChildAsset
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import Repository
-from am.schemas.nodefuncs import check_node_hierarchy, check_webid, get_fields
+
+# from am.schemas.nodefuncs import check_node_hierarchy, check_webid, get_fields
+from am.schemas.objrules import ObjectsRules
 from am.schemas.webid import WebId
+
+rules = ObjectsRules(__id_cls__=WebId)
 
 
 @pytest.fixture
@@ -29,10 +33,11 @@ def repo() -> Repository:
 def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
     TargetAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
-        _check_webid=check_webid,
-        _fields=get_fields,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
     )
 
 
@@ -51,10 +56,11 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
     with pytest.raises(expected_exception=InconsistentIdTypeError):
         TargetAsset(
             _repo=repo,
+            _rules=rules,
             target=target,
             webid=webid,
-            _check_webid=check_webid,
-            _fields=get_fields,
+            # _check_webid=check_webid,
+            # _fields=get_fields,
         )
 
 
@@ -68,14 +74,15 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
     ],
 )
 def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
-    ParentChildAsset(
+    TargetChildAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
         child=child,
-        _check_webid=check_webid,
-        _fields=get_fields,
-        _check_hierarchy=check_node_hierarchy,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
+        # _check_hierarchy=check_node_hierarchy,
     )
 
 
@@ -91,12 +98,13 @@ def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str
 def test_parent_asset_nok(target: str, webid: WebId, repo: Repository, child: str):
 
     with pytest.raises(expected_exception=ObjHierarchyError):
-        ParentChildAsset(
+        TargetChildAsset(
             _repo=repo,
+            _rules=rules,
             target=target,
             webid=webid,
             child=child,
-            _check_webid=check_webid,
-            _fields=get_fields,
-            _check_hierarchy=check_node_hierarchy,
+            # _check_webid=check_webid,
+            # _fields=get_fields,
+            # _check_hierarchy=check_node_hierarchy,
         )

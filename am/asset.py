@@ -2,53 +2,49 @@
 
 from collections.abc import Iterable
 from dataclasses import dataclass
-from typing import Callable
 
 from am.interfaces import (
     IdInterface,
     JsonObj,
     NodeInterface,
+    ObjectsRules,
     ReadAllOptions,
     Repository,
 )
-from am.schemas.nodefuncs import make_id
 
 
 @dataclass(frozen=True, slots=True)
 class TargetAsset:
 
     _repo: Repository
-    _check_webid: Callable[[str, IdInterface], None]
-    _fields: Callable[[str], Iterable[str]]
+    _rules: ObjectsRules
 
     target: str
     webid: IdInterface
 
     def __post_init__(self) -> None:
-        self._check_webid(self.target, self.webid)
+        self._rules.check_id(self.target, self.webid)
 
 
 @dataclass(frozen=True, slots=True)
-class ParentChildAsset(TargetAsset):
+class TargetChildAsset(TargetAsset):
 
-    _check_hierarchy: Callable[[str, str], None]
     child: str
 
     def __post_init__(self) -> None:
 
         TargetAsset.__post_init__(self)
-        self._check_hierarchy(self.target, self.child)
+        self._rules.check_hierarchy(self.target, self.child)
 
 
 @dataclass(frozen=True, slots=True)
-class CreateAsset(ParentChildAsset):
-
-    _make: Callable[..., NodeInterface]
+class CreateAsset(TargetChildAsset):
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        obj: NodeInterface = self._make(target=self.child, **inpobj)
-        new_webid: IdInterface = make_id(target=self.child)
+        obj: NodeInterface = self._rules.make_node(target=self.child, **inpobj)
+
+        new_webid: IdInterface = self._rules.make_id(target=self.child)
 
         self._repo.create(obj=obj, id=new_webid)
 
@@ -59,12 +55,12 @@ class ReadOneAsset(TargetAsset):
 
     def __call__(self, *fields: str) -> JsonObj:
 
-        sel_fields = fields if fields else self._fields(self.target)
+        sel_fields = fields if fields else self._rules.get_fields(self.target)
 
         return self._repo.read(*sel_fields)
 
 
-class ReadManyAsset(ParentChildAsset):
+class ReadManyAsset(TargetChildAsset):
 
     def __call__(self, options: ReadAllOptions | None = None) -> Iterable[JsonObj]:
 
@@ -73,7 +69,7 @@ class ReadManyAsset(ParentChildAsset):
         return self._repo.list(options=options)
 
 
-class UpdateAsset(ParentChildAsset):
+class UpdateAsset(TargetChildAsset):
     def __call__(self, updobj: JsonObj) -> JsonObj:
         return {}
 

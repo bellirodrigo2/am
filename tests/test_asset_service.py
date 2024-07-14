@@ -11,12 +11,7 @@ from pydantic import ValidationError
 
 from am.asset import CreateAsset, ReadManyAsset, ReadOneAsset
 from am.interfaces import Repository
-from am.schemas.nodefuncs import (
-    check_node_hierarchy,
-    check_webid,
-    get_fields,
-    make_node,
-)
+from am.schemas.objrules import ObjectsRules
 from am.schemas.webid import WebId
 
 obj_file: Path = Path.cwd() / "tests/objs.json"
@@ -24,8 +19,9 @@ with open(file=obj_file) as f:
     inputs = json.load(fp=f)
     assert inputs is not None
 
+rules = ObjectsRules(__id_cls__=WebId)
 
-# testing TargetAsset
+
 @pytest.fixture
 def repo() -> Repository:
     return MagicMock()
@@ -69,13 +65,14 @@ def test_create_asset_ok(
 ):
     create = CreateAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
         child=child,
-        _check_webid=check_webid,
-        _fields=get_fields,
-        _check_hierarchy=check_node_hierarchy,
-        _make=make_node,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
+        # _check_hierarchy=check_node_hierarchy,
+        # _make=make_node,
     )
     for obj in objs:
         repo.reset_mock()  # type: ignore
@@ -120,13 +117,14 @@ def test_create_asset_nok(
 ):
     create = CreateAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
         child=child,
-        _check_webid=check_webid,
-        _fields=get_fields,
-        _check_hierarchy=check_node_hierarchy,
-        _make=make_node,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
+        # _check_hierarchy=check_node_hierarchy,
+        # _make=make_node,
     )
     for obj in inputs["assetservers"]:
         with pytest.raises(expected_exception=ValidationError):
@@ -146,10 +144,11 @@ def test_create_asset_nok(
 def test_readone_asset_ok(target: str, webid: WebId, repo: Repository):
     readone = ReadOneAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
-        _check_webid=check_webid,
-        _fields=get_fields,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
     )
     repo.reset_mock()  # type: ignore
     readone()
@@ -168,12 +167,13 @@ def test_readone_asset_ok(target: str, webid: WebId, repo: Repository):
 def test_readmany_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
     readmany = ReadManyAsset(
         _repo=repo,
+        _rules=rules,
         target=target,
         webid=webid,
         child=child,
-        _check_webid=check_webid,
-        _fields=get_fields,
-        _check_hierarchy=check_node_hierarchy,
+        # _check_webid=check_webid,
+        # _fields=get_fields,
+        # _check_hierarchy=check_node_hierarchy,
     )
 
     repo.reset_mock()  # type: ignore
