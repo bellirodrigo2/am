@@ -39,7 +39,7 @@ name_gen = make_name(settings.default_name)
 
 class Label(BaseModel):
 
-    model_config = ObjConfig()
+    model_config = ObjConfig(extra="forbid")
 
     name: str | None = Field(
         description="Name Field Description",

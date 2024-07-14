@@ -96,15 +96,13 @@
       "name": "view1",
       "client_id": "client13",
       "description": "view1 description",
-      "view_str": "viewN1",
-      "proc_str": "processing1"
+      "view_str": "viewN1"
     },
     {
       "name": "view2",
       "client_id": "client14",
       "description": "view2 description",
-      "view_str": "viewN2",
-      "proc_str": "processing1"
+      "view_str": "viewN2"
     }
   ]
 }

@@ -1,10 +1,13 @@
 from typing import Any, get_args, get_origin
 
-from pydantic import AnyUrl, BaseModel, Field
+from pydantic import AnyUrl, BaseModel, ConfigDict, Field
 from pydantic.fields import FieldInfo
 
 
 class First(BaseModel):
+
+    # model_config = ConfigDict(extra="forbid")
+
     arg: str | None = None
 
 
@@ -28,5 +31,12 @@ def get_field(info: type[Any]) -> tuple[type, bool]:
     raise Exception(f"Type {type(info)} does not follow the required format")
 
 
-for name, field in Teste.model_fields.items():
-    print(name, get_field(field.annotation))  # type: ignore
+# for name, field in Teste.model_fields.items():
+#     print(name, get_field(field.annotation))  # type: ignore
+
+
+class Second(First):
+    arg2: str
+
+
+f = Second(arg="foobar", arg2="whatelse", arg3="foobae")
