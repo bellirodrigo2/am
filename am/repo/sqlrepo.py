@@ -1,25 +1,11 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
-from sqlalchemy import (
-    Column,
-    ForeignKey,
-    Index,
-    Insert,
-    Integer,
-    MetaData,
-    Select,
-    String,
-    Table,
-    create_engine,
-    func,
-    insert,
-    join,
-    literal,
-    over,
-    select,
-)
-from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+from sqlalchemy import (Column, ForeignKey, Index, Insert, Integer, Select,
+                        String, Table, create_engine, func, insert, join,
+                        literal, over, select)
+from sqlalchemy.orm import (DeclarativeBase, Mapped, Session, aliased,
+                            mapped_column)
 
 
 class Base(DeclarativeBase): ...
@@ -79,25 +65,22 @@ class Item(Label):
         return f"{self.__class__.__name__}({self.name!r}, {self.data_point}, {self.data_type})"
 
 
-def make_link_table(metadata: MetaData) -> Table:
-
-    link = Table(
-        "link",
-        metadata,
-        Column("parent", String(32), primary_key=True),
-        Column("child", String(32), primary_key=True),
-        Column("depth", Integer),
-        extend_existing=True,
-    )
-    Index("tree_idx", link.c.parent, link.c.depth, link.c.child, unique=True)
-    Index("tree_idx2", link.c.child, link.c.parent, link.c.depth, unique=True)
-    return link
+link = Table(
+    "link",
+    Base.metadata,
+    Column("parent", String(32), primary_key=True),
+    Column("child", String(32), primary_key=True),
+    Column("depth", Integer),
+    extend_existing=True,
+)
+Index("tree_idx", link.c.parent, link.c.depth, link.c.child, unique=True)
+Index("tree_idx2", link.c.child, link.c.parent, link.c.depth, unique=True)
 
 
-class TableInterface(Protocol):
+class LinkTableInterface(Protocol):
+
     @property
     def tab(self) -> Table: ...
-class LinkTableInterface(TableInterface, Protocol):
 
     @property
     def parent(self) -> Column[str]: ...
@@ -110,7 +93,7 @@ class LinkTableInterface(TableInterface, Protocol):
 @dataclass(frozen=True)
 class LinkTable:
 
-    tab: Table
+    tab: Table = field(default=link)
 
     @property
     def parent(self) -> Column[str]:
@@ -124,18 +107,41 @@ class LinkTable:
     def depth(self) -> Column[str]:
         return self.tab.c.depth
 
+    def select_children(self, obj: Any, id: str, *fields: str) -> Select[Any]:
+
+        cols = [getattr(obj, field) for field in fields]  # if fields else [obj]
+
+        j = join(obj, self.tab, obj.id == self.child)
+        return select(*cols).select_from(j).where(self.parent == id, self.depth == 1)
+
+    def select_descendants(self, obj: Any, id: str, *fields: str) -> Select[Any]:
+        j = join(obj, self.tab, obj.id == self.child)
+        return (
+            select(obj)
+            .select_from(j)
+            .where(self.parent == id, self.depth > 0)
+            .order_by(self.depth.asc())
+        )
+
 
 # TODO no fim de que sr chamado por func(target:str, *fields:str)
-# TODO falta o joint com o objTable
-def select_children(obj: Any, link: LinkTableInterface, id: str) -> Select[Any]:
+def select_children(
+    obj: Any, link: LinkTableInterface, id: str, *fields: str
+) -> Select[Any]:
+
+    cols = [getattr(obj, field) for field in fields] if fields else [obj]
     j = join(obj, link.tab, obj.id == link.child)
-    return select(obj).select_from(j).where(link.parent == id, link.depth == 1)
+    return select(*cols).select_from(j).where(link.parent == id, link.depth == 1)
 
 
-def select_descendants(obj: Any, link: LinkTableInterface, id: str) -> Select[Any]:
+def select_descendants(
+    obj: Any, link: LinkTableInterface, id: str, *fields: str
+) -> Select[Any]:
+
+    cols = [getattr(obj, field) for field in fields] if fields else [obj]
     j = join(obj, link.tab, obj.id == link.child)
     return (
-        select(obj)
+        select(*cols)
         .select_from(j)
         .where(link.parent == id, link.depth > 0)
         .order_by(link.depth.asc())
@@ -165,7 +171,7 @@ def bootstrap(url: str, echo: bool = False):
 
 url = "sqlite://"
 echo = False
-link_table = LinkTable(make_link_table(Base.metadata))
+link_table = LinkTable()
 
 engine = bootstrap(url, echo)
 
@@ -174,7 +180,7 @@ with Session(engine) as session:
     n = 12
 
     nodes = [
-        Node(id=f"{i}", name=f"name{i}", template=f"name{i}", detached="always")
+        Node(id=f"{i}", name=f"name{i}", template=f"temp{i}", detached="always")
         for i in range(n)
     ]
     items = [
@@ -253,7 +259,8 @@ with engine.begin() as conn:
 
 with engine.begin() as conn:
 
-    stmt = select_children(Node, link_table, "2")
+    stmt = select_children(Node, link_table, "2", "id", "name", "template")
+    print(stmt)
     # stmt = select(link_table.tab)
     res = conn.execute(stmt)
     for r in res:
@@ -265,7 +272,8 @@ with engine.begin() as conn:
     # stmt = select(link_table.tab)
     res = conn.execute(stmt)
     for r in res:
-        print(r)
+        print(r._asdict())  # type: ignore
+        
     # q = select_descendants(uuids[0])
     # res = conn.execute(q)
     # assert len(res.fetchall()) == 2 * n - 1
