@@ -30,6 +30,9 @@ class SchemaSettings(BaseSettings):
     description_min_length: int
     description_max_length: int
 
+    webid_min_length: int
+    webid_max_length: int
+
     clientid_min_length: int
     clientid_max_length: int
 

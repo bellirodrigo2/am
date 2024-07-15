@@ -49,17 +49,17 @@ class TargetChildAsset(TargetAsset):
 class CreateAsset(TargetChildAsset):
 
     _cast: Callable[..., VisitableInterface]
-    _make_id: Callable[[str], IdInterface]
+    # _make_id: Callable[[str], IdInterface]
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
         obj: VisitableInterface = self._cast(target=self.child, **inpobj)
 
-        new_webid: IdInterface = self._make_id(self.child)
+        # new_webid: IdInterface = self._make_id(self.child)
 
-        self._repo.create(obj=obj, id=new_webid)
+        self._repo.create(obj=obj, id=self.webid)
 
-        return {"webid": new_webid}
+        return {f"{self.child}": obj}
 
 
 @dataclass(frozen=True, slots=True)

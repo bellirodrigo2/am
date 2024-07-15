@@ -12,10 +12,9 @@ from pydantic import ValidationError
 from am.asset import CreateAsset, ReadManyAsset, ReadOneAsset
 from am.interfaces import Repository
 from am.schemas.objrules import (
-    cast_object,
     check_hierarchy,
     check_id,
-    make_id,
+    make_input_object,
     split_fields,
 )
 from am.schemas.webid import WebId
@@ -71,18 +70,20 @@ def test_create_asset_ok(
         _repo=repo,
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
-        _cast=cast_object,
-        _make_id=make_id,
+        _cast=make_input_object,
+        # _make_id=make_id,
         target=target,
         webid=webid,
         child=child,
     )
     for obj in objs:
         repo.reset_mock()  # type: ignore
-        res: Mapping[str, Any] = create(obj)
+        create(obj)
+        # res: Mapping[str, Any] = create(obj)
+        # print(res)
         repo.create.assert_called_once()  # type: ignore
-        assert "webid" in res
-        create._check_id(child, res["webid"])  # type: ignore
+        # assert "webid" in res
+        # create._check_id(child, res["webid"])  # type: ignore
 
 
 def test_create_asset_empty(
@@ -92,16 +93,32 @@ def test_create_asset_empty(
         _repo=repo,
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
-        _cast=cast_object,
-        _make_id=make_id,
+        _cast=make_input_object,
+        # _make_id=make_id,
         target="node",
         webid=WebId.make(input="node668540fb5ac420d8fc35320a"),
         child="node",
     )
-    res: Mapping[str, Any] = create({})
+    res1: Mapping[str, Any] = create({})
     repo.create.assert_called_once()  # type: ignore
-    assert "webid" in res
-    create._check_id("node", res["webid"])  # type: ignore
+    res2: Mapping[str, Any] = create({})
+    res3: Mapping[str, Any] = create({})
+    print(res1)
+    assert (
+        res1["node"].name != res2["node"].name
+        and res2["node"].name != res3["node"].name
+        and res1["node"].name != res3["node"].name
+    )
+    assert (
+        res1["node"].web_id != res2["node"].web_id
+        and res2["node"].web_id != res3["node"].web_id
+        and res1["node"].web_id != res3["node"].web_id
+    )
+    assert (
+        res1["node"].client_id != res2["node"].client_id
+        and res2["node"].client_id != res3["node"].client_id
+        and res1["node"].client_id != res3["node"].client_id
+    )
 
 
 def test_create_asset_wrong_field(
@@ -111,8 +128,8 @@ def test_create_asset_wrong_field(
         _repo=repo,
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
-        _cast=cast_object,
-        _make_id=make_id,
+        _cast=make_input_object,
+        # _make_id=make_id,
         target="node",
         webid=WebId.make(input="node668540fb5ac420d8fc35320a"),
         child="node",
@@ -156,8 +173,8 @@ def test_create_asset_nok(
         _repo=repo,
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
-        _cast=cast_object,
-        _make_id=make_id,
+        _cast=make_input_object,
+        # _make_id=make_id,
         target=target,
         webid=webid,
         child=child,

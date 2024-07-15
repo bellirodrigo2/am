@@ -1,10 +1,11 @@
-from collections.abc import Iterable
 from dataclasses import dataclass
 from typing import Any, Container, Generic, TypeVar
 
 from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
 from am.interfaces import IdInterface
+from am.schemas import webid
 from am.schemas.baseclass import BaseClass
+from am.schemas.label import make_input_fields, make_update_fields
 from am.schemas.objects import metadata
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.collection import Collection
@@ -20,13 +21,6 @@ from am.schemas.objects.templatenode import TemplateNode
 from am.schemas.objects.user import User
 from am.schemas.objects.view import View
 from am.schemas.webid import WebId
-
-
-def all_subclasses(cls: type) -> Iterable[Any]:
-    return set(cls.__subclasses__()).union(
-        [s for c in cls.__subclasses__() for s in all_subclasses(c)]
-    )
-
 
 _T = TypeVar("_T")
 
@@ -98,7 +92,7 @@ byte_getter = _GetByte()
 parent_constr_getter = _ParentConstraint()
 
 
-def make_id(target: str, id_cls: type[IdInterface] = WebId) -> IdInterface:
+def _make_id(target: str, id_cls: type[IdInterface] = WebId) -> IdInterface:
 
     target_byte = byte_getter.get(target)
     return id_cls.make(input=target_byte)
@@ -118,9 +112,14 @@ def check_hierarchy(target: str, child: str) -> None:
         raise ObjHierarchyError(target, child)
 
 
-def cast_object(target: str, **kwargs: Any) -> BaseClass:
+def make_input_object(target: str, **kwargs: Any) -> BaseClass:
     target_cls: type[BaseClass] = class_getter.get(target)
-    return target_cls(**kwargs)
+
+    new_webid = _make_id(target)
+    full_kwargs = make_input_fields(webid=str(new_webid), **kwargs)
+    # full_kwargs["web_id"] = _make_id(target, id_cls=WebId)
+
+    return target_cls(**full_kwargs)
 
 
 def _get_fields(target: str) -> set[str]:

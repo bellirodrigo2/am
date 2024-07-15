@@ -7,6 +7,7 @@ from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from am.schemas.config import get_schema_settings
+from am.schemas.webid import WebId
 
 ObjConfig = partial(
     ConfigDict,
@@ -45,28 +46,47 @@ class Label(BaseModel):
         description="Name Field Description",
         min_length=settings.name_min_length,
         max_length=settings.name_max_length,
-        default=None,
+        # default=None,
+    )
+    web_id: str | None = Field(
+        description="ClientId Field Description",
+        min_length=settings.webid_min_length,
+        max_length=settings.webid_max_length,
+        # default=None,
     )
     client_id: str | None = Field(
         description="ClientId Field Description",
         min_length=settings.clientid_min_length,
         max_length=settings.clientid_max_length,
-        default=None,
+        # default=None,
     )
     description: str | None = Field(
         description="Description Field Description",
         min_length=settings.description_min_length,
         max_length=settings.description_max_length,
-        default=None,
+        # default=None,
     )
 
 
-def make_input_fields(**fields: Any) -> Mapping[str, Any]:
+def make_input_fields(webid: str, **fields: Any) -> Mapping[str, Any]:
 
     if "name" not in fields:
         fields["name"] = next(name_gen)
     if "client_id" not in fields:
-        fields["client_id"] = uuid1()
+        fields["client_id"] = str(uuid1())
     if "description" not in fields:
         fields["description"] = settings.default_description
+    fields["web_id"] = webid
+    return fields
+
+
+def make_update_fields(**fields: Any) -> Mapping[str, Any]:
+
+    if "name" not in fields:
+        fields["name"] = None
+    if "client_id" not in fields:
+        fields["client_id"] = None
+    if "description" not in fields:
+        fields["description"] = None
+    fields["web_id"] = None
     return fields

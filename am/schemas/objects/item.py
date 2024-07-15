@@ -8,5 +8,5 @@ from am.schemas.datatype import DataType
 
 class Item(BaseClass):
 
-    data_point: str  # webid do point
-    data_type: DataType = Field()
+    data_point: str = Field(max_length=128)
+    data_type: DataType
