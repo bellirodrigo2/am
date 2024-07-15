@@ -2,13 +2,9 @@
 
 from pydantic import AnyUrl, Field
 
-from am.schemas.baseclass import BaseServer
+from am.schemas.baseclass import BaseClass
 
 
-class AssetServer(BaseServer):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"asse"
+class AssetServer(BaseClass):
 
     source_url: AnyUrl = Field()

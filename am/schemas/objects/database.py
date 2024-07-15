@@ -4,17 +4,9 @@ from typing import Iterable
 
 from pydantic import Field
 
-from am.schemas.baseclass import BaseRoot
+from am.schemas.baseclass import BaseClass
 
 
-class DataBase(BaseRoot):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"daba"
-
-    @classmethod
-    def parent_constr(cls) -> Iterable[str] | None:
-        return ["assetserver"]
+class DataBase(BaseClass):
 
     host: str = Field()

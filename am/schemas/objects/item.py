@@ -2,15 +2,11 @@
 
 from pydantic import Field
 
-from am.schemas.baseclass import BaseItem
+from am.schemas.baseclass import BaseClass
 from am.schemas.datatype import DataType
 
 
-class Item(BaseItem):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"item"
+class Item(BaseClass):
 
     data_point: str  # webid do point
     data_type: DataType = Field()

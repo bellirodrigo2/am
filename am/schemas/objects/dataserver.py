@@ -2,14 +2,10 @@
 
 from pydantic import AnyUrl, Field
 
-from am.schemas.baseclass import BaseServer
+from am.schemas.baseclass import BaseClass
 
 
-class DataServer(BaseServer):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"dase"
+class DataServer(BaseClass):
 
     source_url: AnyUrl = Field()
     version: int = Field()

@@ -2,13 +2,9 @@
 
 from pydantic import Field
 
-from am.schemas.baseclass import BaseElement
+from am.schemas.baseclass import BaseClass
 
 
-class Keyword(BaseElement):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"kewo"
+class Keyword(BaseClass):
 
     keywords: list[str] = Field()

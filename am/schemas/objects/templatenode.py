@@ -1,20 +1,10 @@
 """ Template Node Object """
 
-from typing import Iterable
-
 from pydantic import Field
 
-from am.schemas.baseclass import BaseNode
+from am.schemas.baseclass import BaseClass
 
 
-class TemplateNode(BaseNode):
-
-    @classmethod
-    def byte_rep(cls) -> bytes:
-        return b"teno"
-
-    @classmethod
-    def parent_constr(cls) -> Iterable[str] | None:
-        return ["templatenode", "templateitem"]
+class TemplateNode(BaseClass):
 
     extensible: bool = Field(default=True)
