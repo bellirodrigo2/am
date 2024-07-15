@@ -103,7 +103,7 @@ def test_create_asset_empty(
     repo.create.assert_called_once()  # type: ignore
     res2: Mapping[str, Any] = create({})
     res3: Mapping[str, Any] = create({})
-    print(res1)
+    # print(res1)
     assert (
         res1["node"].name != res2["node"].name
         and res2["node"].name != res3["node"].name

@@ -9,6 +9,7 @@ from am.interfaces import (
     ReadAllOptionsInterface,
     Repository,
     SortOrder,
+    TreeNodeInterface,
     VisitableInterface,
 )
 
@@ -39,25 +40,16 @@ class TargetChildAsset(TargetAsset):
         self._check_hierarchy(self.target, self.child)
 
 
-# @dataclass(frozen=True, slots=True)
-# class _Asset(TargetChildAsset):
-
-# _obj_class_handler: ObjectHandler
-
-
 @dataclass(frozen=True, slots=True)
 class CreateAsset(TargetChildAsset):
 
-    _cast: Callable[..., VisitableInterface]
-    # _make_id: Callable[[str], IdInterface]
+    _cast: Callable[..., TreeNodeInterface]
 
     def __call__(self, inpobj: JsonObj) -> JsonObj:
 
-        obj: VisitableInterface = self._cast(target=self.child, **inpobj)
+        obj: TreeNodeInterface = self._cast(target=self.child, **inpobj)
 
-        # new_webid: IdInterface = self._make_id(self.child)
-
-        self._repo.create(obj=obj, id=self.webid)
+        self._repo.create(obj=obj, parentid=self.webid)
 
         return {f"{self.child}": obj}
 

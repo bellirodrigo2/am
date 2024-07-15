@@ -1,11 +1,28 @@
 from dataclasses import dataclass, field
-from typing import Any, Protocol
+from typing import Any
 
-from sqlalchemy import (Column, ForeignKey, Index, Insert, Integer, Select,
-                        String, Table, create_engine, func, insert, join,
-                        literal, over, select)
-from sqlalchemy.orm import (DeclarativeBase, Mapped, Session, aliased,
-                            mapped_column)
+from sqlalchemy import (
+    Column,
+    Engine,
+    ForeignKey,
+    Index,
+    Insert,
+    Integer,
+    Select,
+    String,
+    Table,
+    create_engine,
+    func,
+    insert,
+    join,
+    literal,
+    over,
+    select,
+)
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+# from am.interfaces import IdInterface, TreeNodeInterface, VisitorInterface
+# from am.visitor import Visitor
 
 
 class Base(DeclarativeBase): ...
@@ -77,19 +94,6 @@ Index("tree_idx", link.c.parent, link.c.depth, link.c.child, unique=True)
 Index("tree_idx2", link.c.child, link.c.parent, link.c.depth, unique=True)
 
 
-class LinkTableInterface(Protocol):
-
-    @property
-    def tab(self) -> Table: ...
-
-    @property
-    def parent(self) -> Column[str]: ...
-    @property
-    def child(self) -> Column[str]: ...
-    @property
-    def depth(self) -> Column[str]: ...
-
-
 @dataclass(frozen=True)
 class LinkTable:
 
@@ -107,6 +111,8 @@ class LinkTable:
     def depth(self) -> Column[str]:
         return self.tab.c.depth
 
+    # TODO no fim de que sr chamado por func(target:str, *fields:str)
+
     def select_children(self, obj: Any, id: str, *fields: str) -> Select[Any]:
 
         cols = [getattr(obj, field) for field in fields]  # if fields else [obj]
@@ -123,41 +129,22 @@ class LinkTable:
             .order_by(self.depth.asc())
         )
 
+    def insert_link(self, parentid: str, childid: str) -> tuple[Insert, Insert]:
+        sstmt = select(
+            self.parent,
+            literal(childid),
+            over(func.row_number(), order_by=self.depth),
+        ).where(self.child == parentid)
 
-# TODO no fim de que sr chamado por func(target:str, *fields:str)
-def select_children(
-    obj: Any, link: LinkTableInterface, id: str, *fields: str
-) -> Select[Any]:
+        child = insert(table=self.tab).values(
+            {"parent": childid, "child": childid, "depth": 0}
+        )
 
-    cols = [getattr(obj, field) for field in fields] if fields else [obj]
-    j = join(obj, link.tab, obj.id == link.child)
-    return select(*cols).select_from(j).where(link.parent == id, link.depth == 1)
-
-
-def select_descendants(
-    obj: Any, link: LinkTableInterface, id: str, *fields: str
-) -> Select[Any]:
-
-    cols = [getattr(obj, field) for field in fields] if fields else [obj]
-    j = join(obj, link.tab, obj.id == link.child)
-    return (
-        select(*cols)
-        .select_from(j)
-        .where(link.parent == id, link.depth > 0)
-        .order_by(link.depth.asc())
-    )
-
-
-def insert_link(link: LinkTableInterface, parentid: str, childid: str) -> Insert:
-    sstmt = select(
-        link.parent,
-        literal(childid),
-        over(func.row_number(), order_by=link.depth),
-    ).where(link.child == parentid)
-    return link.tab.insert().from_select(
-        ["parent", "child", "depth"],
-        sstmt,
-    )
+        link = self.tab.insert().from_select(
+            ["parent", "child", "depth"],
+            sstmt,
+        )
+        return child, link
 
 
 def bootstrap(url: str, echo: bool = False):
@@ -196,44 +183,29 @@ with Session(engine) as session:
 
 with engine.begin() as conn:
 
-    # TODO toda vez que criar o Node, tem que inserir o depth 0
-    d00 = insert(link_table.tab).values({"parent": "0", "child": "0", "depth": 0})
-    d01 = insert(link_table.tab).values({"parent": "1", "child": "1", "depth": 0})
-    d02 = insert(link_table.tab).values({"parent": "2", "child": "2", "depth": 0})
-    d03 = insert(link_table.tab).values({"parent": "3", "child": "3", "depth": 0})
-    d04 = insert(link_table.tab).values({"parent": "4", "child": "4", "depth": 0})
-    d05 = insert(link_table.tab).values({"parent": "5", "child": "5", "depth": 0})
-    d06 = insert(link_table.tab).values({"parent": "6", "child": "6", "depth": 0})
-    d07 = insert(link_table.tab).values({"parent": "7", "child": "7", "depth": 0})
-    d08 = insert(link_table.tab).values({"parent": "8", "child": "8", "depth": 0})
-    d09 = insert(link_table.tab).values({"parent": "9", "child": "9", "depth": 0})
-    d10 = insert(link_table.tab).values({"parent": "10", "child": "10", "depth": 0})
-    d11 = insert(link_table.tab).values({"parent": "11", "child": "11", "depth": 0})
+    i01, i1 = link_table.insert_link("0", "1")
+    i02, i2 = link_table.insert_link("0", "2")
+    i03, i3 = link_table.insert_link("1", "3")
+    i04, i4 = link_table.insert_link("1", "4")
+    i05, i5 = link_table.insert_link("2", "5")
+    i06, i6 = link_table.insert_link("2", "6")
+    i07, i7 = link_table.insert_link("3", "7")
+    i08, i8 = link_table.insert_link("7", "8")
+    i09, i9 = link_table.insert_link("5", "9")
+    i010, i10 = link_table.insert_link("5", "10")
+    i011, i11 = link_table.insert_link("10", "11")
 
-    conn.execute(d00)
-    conn.execute(d01)
-    conn.execute(d02)
-    conn.execute(d03)
-    conn.execute(d04)
-    conn.execute(d05)
-    conn.execute(d06)
-    conn.execute(d07)
-    conn.execute(d08)
-    conn.execute(d09)
-    conn.execute(d10)
-    conn.execute(d11)
-
-    i1 = insert_link(link_table, "0", "1")
-    i2 = insert_link(link_table, "0", "2")
-    i3 = insert_link(link_table, "1", "3")
-    i4 = insert_link(link_table, "1", "4")
-    i5 = insert_link(link_table, "2", "5")
-    i6 = insert_link(link_table, "2", "6")
-    i7 = insert_link(link_table, "3", "7")
-    i8 = insert_link(link_table, "7", "8")
-    i9 = insert_link(link_table, "5", "9")
-    i10 = insert_link(link_table, "5", "10")
-    i11 = insert_link(link_table, "10", "11")
+    conn.execute(i01)
+    conn.execute(i02)
+    conn.execute(i03)
+    conn.execute(i04)
+    conn.execute(i05)
+    conn.execute(i06)
+    conn.execute(i07)
+    conn.execute(i08)
+    conn.execute(i09)
+    conn.execute(i010)
+    conn.execute(i011)
 
     conn.execute(i1)
     conn.execute(i2)
@@ -259,35 +231,39 @@ with engine.begin() as conn:
 
 with engine.begin() as conn:
 
-    stmt = select_children(Node, link_table, "2", "id", "name", "template")
-    print(stmt)
-    # stmt = select(link_table.tab)
+    stmt = link_table.select_children(Node, "2", "id", "name", "template")
     res = conn.execute(stmt)
     for r in res:
         print(r)
 
 with engine.begin() as conn:
 
-    stmt = select_descendants(Node, link_table, "2")
-    # stmt = select(link_table.tab)
+    stmt = link_table.select_descendants(Node, "2")
     res = conn.execute(stmt)
     for r in res:
         print(r._asdict())  # type: ignore
-        
-    # q = select_descendants(uuids[0])
-    # res = conn.execute(q)
-    # assert len(res.fetchall()) == 2 * n - 1
 
+
+# class ObjVisitor(Visitor): ...
+
+
+# @dataclass(frozen=True, slots=True)
 # class SQLRepository:
 
-#     def create(self, parentid: IdInterface, obj: VisitableInterface) -> None: ...
+#     _closure: LinkTable
+#     _table_getter: VisitorInterface
+#     _engine: Engine
 
-#     def create_many(self, objs: tuple[IdInterface, VisitableInterface]) -> None: ...
+#     def create(self, obj: TreeNodeInterface, parentid: IdInterface) -> None:
 
-#     def read(self, *fields: str) -> JsonObj: ...
+#         with Session(self._engine) as session:
 
-#     def list(self, options: ReadAllOptionsInterface | None) -> Iterable[JsonObj]: ...
+#             obj_table = self._table_getter.visit(obj)
+#             db_obj = obj_table(obj)
+#             session.add(db_obj)
+#             session.commit()
 
-#     def update(self, base: JsonObj, obj_spec: JsonObj) -> JsonObj: ...
-
-#     def delete(self) -> JsonObj: ...
+#         with self._engine.begin() as conn:
+#             iobj, ilinks = self._closure.insert_link(str(parentid), str(obj.web_id))
+#             conn.execute(iobj)
+#             conn.execute(ilinks)
