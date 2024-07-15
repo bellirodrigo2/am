@@ -5,7 +5,7 @@ from pydantic import Field
 from am.schemas.baseclass import BaseElement
 
 
-class Keywords(BaseElement):
+class Keyword(BaseElement):
 
     @classmethod
     def byte_rep(cls) -> bytes:

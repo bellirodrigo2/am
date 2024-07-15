@@ -1,15 +1,15 @@
-""" EnumSet Object"""
+""" Collections Object"""
 
 from collections.abc import Iterable
 
 from am.schemas.baseclass import BaseElement
 
 
-class EnumSet(BaseElement):
+class Collection(BaseElement):
 
     @classmethod
     def byte_rep(cls) -> bytes:
-        return b"enum"
+        return b"cole"
 
     @classmethod
     def parent_constr(cls) -> Iterable[str] | None:

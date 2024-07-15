@@ -2,10 +2,10 @@
 
 from pydantic import AnyUrl, Field
 
-from am.schemas.baseclass import BaseRoot
+from am.schemas.baseclass import BaseServer
 
 
-class DataServer(BaseRoot):
+class DataServer(BaseServer):
 
     @classmethod
     def byte_rep(cls) -> bytes:

@@ -1,3 +1,5 @@
+from typing import Iterable
+
 from pydantic import Field
 
 from am.schemas.baseclass import BaseRoot
@@ -9,6 +11,10 @@ class Point(BaseRoot):
     @classmethod
     def byte_rep(cls) -> bytes:
         return b"seel"
+
+    @classmethod
+    def parent_constr(cls) -> Iterable[str] | None:
+        return ["dataserver"]
 
     server_host: str = Field()
     db_name: str

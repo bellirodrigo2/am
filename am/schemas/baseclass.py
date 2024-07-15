@@ -63,17 +63,17 @@ class BaseNode(BaseClass):
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["basenode", "itemnode", "element"]
+        return ["basenode", "baseitem", "element"]
 
 
 class BaseItem(BaseClass):
     @classmethod
     def base_type(cls) -> str:
-        return "itemnode"
+        return "baseitem"
 
     @classmethod
     def children(cls) -> Container[str]:
-        return ["itemnode", "element"]
+        return ["baseitem", "element"]
 
 
 class ElementField(BaseClass):

@@ -33,15 +33,30 @@ class VisitorInterface(Protocol):
     def visit(self, element: VisitableInterface) -> Any: ...  # type: ignore
 
 
-NodeInterface = VisitableInterface
-
-
 class ObjectsRules(Protocol):
     def make_id(self, target: str) -> IdInterface: ...
-    def make_node(self, target: str, **kwargs: Any) -> NodeInterface: ...
+    def make_node(self, target: str, **kwargs: Any) -> VisitableInterface: ...
     def check_hierarchy(self, target: str, child: str) -> None: ...
     def check_id(self, target: str, id: IdInterface) -> None: ...
-    def get_fields(self, target: str) -> Iterable[str]: ...
+    def get_fields(self, target: str) -> tuple[str, ...]: ...
+
+
+# class _Getter(Protocol):
+# def get(self, target: str) -> Any: ...
+
+
+class _Maker(Protocol):
+    def make(self, target: str, **kwargs: Any) -> Any: ...
+
+
+class _Checker(Protocol):
+    def check(self, target: str, against: Any) -> None: ...
+
+
+class IdHandlerInterface(_Maker, _Checker, Protocol): ...
+
+
+# class ObjectHandler(_Maker, _Getter, Protocol): ...
 
 
 class SortOrder(Enum):
@@ -61,7 +76,7 @@ class ReadAllOptionsInterface(Protocol):
     search_full_hierarchy: bool
     sort_options: tuple[tuple[field, SortOrder], ...] | None
     pag_options: tuple[start, max] | None
-    selected_fields: Iterable[field] | None
+    selected_fields: tuple[field, ...]
 
 
 class CreateAssetInterface(Protocol):
@@ -99,7 +114,7 @@ class DeleteAssetInterface(Protocol):
 
 class Repository(Protocol):
 
-    def create(self, obj: NodeInterface, id: IdInterface) -> None: ...
+    def create(self, obj: VisitableInterface, id: IdInterface) -> None: ...
 
     def read(self, *fields: str) -> JsonObj: ...
 

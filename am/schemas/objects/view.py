@@ -15,6 +15,6 @@ class View(BaseElement):
 
     @classmethod
     def parent_constr(cls) -> Iterable[str] | None:
-        return ["node", "item"]
+        return ["basenode", "baseitem"]
 
     view_str: str = Field()
