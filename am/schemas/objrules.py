@@ -1,10 +1,11 @@
 from dataclasses import dataclass
 from typing import Any, Container, Generic, TypeVar
 
-from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
-from am.interfaces import IdInterface
-from am.schemas import webid
+from am.exceptions import InconsistentIdTypeError, InvalidIdError, ObjHierarchyError
+from am.interfaces import TreeNodeInterface
 from am.schemas.baseclass import BaseClass
+from am.schemas.id_.errors import InvalidId
+from am.schemas.id_.objectid import ObjectId
 from am.schemas.label import make_input_fields, make_update_fields
 from am.schemas.objects import metadata
 from am.schemas.objects.assetserver import AssetServer
@@ -20,7 +21,6 @@ from am.schemas.objects.templateitem import TemplateItem
 from am.schemas.objects.templatenode import TemplateNode
 from am.schemas.objects.user import User
 from am.schemas.objects.view import View
-from am.schemas.webid import WebId
 
 _T = TypeVar("_T")
 
@@ -73,8 +73,8 @@ constr = Container[str]
 class _ParentConstraint(_Getter[Container[str]]):
     assetserver: constr = ()
     dataserver: constr = ()
-    database: constr = "assetserver"
-    user: constr = "assetserver"
+    database: constr = ("assetserver",)
+    user: constr = ("assetserver",)
     enumset: constr = ("database", "user")
     point: constr = ("dataserver",)
     view: constr = ("node", "item", "templatenode", "templateitem")
@@ -92,16 +92,48 @@ byte_getter = _GetByte()
 parent_constr_getter = _ParentConstraint()
 
 
-def _make_id(target: str, id_cls: type[IdInterface] = WebId) -> IdInterface:
+@dataclass(frozen=True)
+class WebId:
+    pref: bytes
+    bid: str | None
+
+    def __post_init__(self):
+
+        # validate pref here
+
+        id = ObjectId(self.bid) or ObjectId()
+        object.__setattr__(self, "bid", id)
+
+    def __str__(self) -> str:
+        return self.pref.decode(encoding="utf8") + str(self.bid)
+
+    def __bytes__(self) -> bytes:
+        return self.pref + self.bid.encode("utf-8")  # type: ignore
+
+
+def _cast_id(id: str) -> WebId:
+
+    pref = id[:4].encode("utf-8")
+
+    try:
+        oid = ObjectId(id[4:])
+    except InvalidId:
+        raise InvalidIdError(id)
+
+    return WebId(pref=pref, bid=str(oid))
+
+
+def _make_new_id(target: str) -> WebId:
 
     target_byte = byte_getter.get(target)
-    return id_cls.make(input=target_byte)
+    return WebId(pref=target_byte, bid=None)
 
 
-def check_id(target: str, id: IdInterface) -> None:
+def check_id(target: str, id: str) -> None:
 
+    webid = _cast_id(id=id)
     target_byte = byte_getter.get(target)
-    if target_byte != id.prefix:
+    if target_byte != webid.pref:
         raise InconsistentIdTypeError(target=target, webid=str(id))
 
 
@@ -112,14 +144,13 @@ def check_hierarchy(target: str, child: str) -> None:
         raise ObjHierarchyError(target, child)
 
 
-def make_input_object(target: str, **kwargs: Any) -> BaseClass:
+def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
     target_cls: type[BaseClass] = class_getter.get(target)
 
-    new_webid = _make_id(target)
+    new_webid = _make_new_id(target)
     full_kwargs = make_input_fields(webid=str(new_webid), **kwargs)
-    # full_kwargs["web_id"] = _make_id(target, id_cls=WebId)
 
-    return target_cls(**full_kwargs)
+    return target_cls(**full_kwargs)  # type: ignore
 
 
 def _get_fields(target: str) -> set[str]:

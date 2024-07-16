@@ -4,11 +4,10 @@ from unittest.mock import MagicMock
 
 import pytest
 
-from am.asset import TargetAsset, TargetChildAsset
-from am.exceptions import InconsistentIdTypeError, ObjHierarchyError
+from am.asset import _TargetAsset, _TargetChildAsset  # type: ignore
+from am.exceptions import InconsistentIdTypeError, InvalidIdError, ObjHierarchyError
 from am.interfaces import Repository
 from am.schemas.objrules import check_hierarchy, check_id
-from am.schemas.webid import WebId
 
 
 @pytest.fixture
@@ -19,19 +18,19 @@ def repo() -> Repository:
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a")),
-        ("dataserver", WebId.make(input="dase668540fb5ac420d8fc35320a")),
-        ("enumset", WebId.make(input="enum668540fb5ac420d8fc35320a")),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a")),
-        ("keyword", WebId.make(input="kewo668540fb5ac420d8fc35320a")),
-        ("view", WebId.make(input="view668540fb5ac420d8fc35320a")),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a")),
-        ("templatenode", WebId.make(input="teno668540fb5ac420d8fc35320a")),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a")),
+        ("assetserver", "asse668540fb5ac420d8fc35320a"),
+        ("dataserver", "dase668540fb5ac420d8fc35320a"),
+        ("enumset", "enum668540fb5ac420d8fc35320a"),
+        ("database", "daba668540fb5ac420d8fc35320a"),
+        ("keyword", "kewo668540fb5ac420d8fc35320a"),
+        ("view", "view668540fb5ac420d8fc35320a"),
+        ("node", "node668540fb5ac420d8fc35320a"),
+        ("templatenode", "teno668540fb5ac420d8fc35320a"),
+        ("item", "item668540fb5ac420d8fc35320a"),
     ],
 )
-def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
-    TargetAsset(
+def test_target_asset_ok(target: str, webid: str, repo: Repository):
+    _TargetAsset(
         _repo=repo,
         _check_id=check_id,
         target=target,
@@ -42,20 +41,45 @@ def test_target_asset_ok(target: str, webid: WebId, repo: Repository):
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", WebId.make(input="node668540fb5ac420d8fc35320a")),
-        ("database", WebId.make(input="elem668540fb5ac420d8fc35320a")),
-        ("view", WebId.make(input="base668540fb5ac420d8fc35320a")),
-        ("node", WebId.make(input="root668540fb5ac420d8fc35320a")),
-        ("item", WebId.make(input="node668540fb5ac420d8fc35320a")),
-        ("templatenode", WebId.make(input="node668540fb5ac420d8fc35320a")),
-        ("enumset", WebId.make(input="daba668540fb5ac420d8fc35320a")),
-        ("point", WebId.make(input="asse668540fb5ac420d8fc35320a")),
+        ("assetserver", "asse668540fb5xxxxac420d8fc35320a"),
+        ("dataserver", "dase668540fb5axxxxxc420d8fc35320a"),
+        ("enumset", "enum668320a"),
+        ("database", "daba668540fb58fc35320a"),
+        ("keyword", "kewo6Aac420d8fc35320a"),
+        ("view", "view66820a"),
+        ("node", "node6685XX"),
+        ("templatenode", "teno66850a"),
+        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
     ],
 )
-def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
+def test_target_asset_invalidid_nok(target: str, webid: str, repo: Repository):
+
+    with pytest.raises(expected_exception=InvalidIdError):
+        _TargetAsset(
+            _repo=repo,
+            _check_id=check_id,
+            target=target,
+            webid=webid,
+        )
+
+
+@pytest.mark.parametrize(
+    "target, webid",
+    [
+        ("assetserver", "node668540fb5ac420d8fc35320a"),
+        ("database", "elem668540fb5ac420d8fc35320a"),
+        ("view", "base668540fb5ac420d8fc35320a"),
+        ("node", "root668540fb5ac420d8fc35320a"),
+        ("item", "node668540fb5ac420d8fc35320a"),
+        ("templatenode", "node668540fb5ac420d8fc35320a"),
+        ("enumset", "daba668540fb5ac420d8fc35320a"),
+        ("point", "asse668540fb5ac420d8fc35320a"),
+    ],
+)
+def test_target_asset_inconsistentid_nok(target: str, webid: str, repo: Repository):
 
     with pytest.raises(expected_exception=InconsistentIdTypeError):
-        TargetAsset(
+        _TargetAsset(
             _repo=repo,
             _check_id=check_id,
             target=target,
@@ -66,19 +90,19 @@ def test_target_asset_nok(target: str, webid: WebId, repo: Repository):
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "database"),
-        ("dataserver", WebId.make(input="dase668540fb5ac420d8fc35320a"), "point"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "node"),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "node"),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "item"),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "item"),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "view"),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "view"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "enumset"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
+        ("dataserver", "dase668540fb5ac420d8fc35320a", "point"),
+        ("database", "daba668540fb5ac420d8fc35320a", "node"),
+        ("node", "node668540fb5ac420d8fc35320a", "node"),
+        ("node", "node668540fb5ac420d8fc35320a", "item"),
+        ("item", "item668540fb5ac420d8fc35320a", "item"),
+        ("item", "item668540fb5ac420d8fc35320a", "view"),
+        ("node", "node668540fb5ac420d8fc35320a", "view"),
+        ("database", "daba668540fb5ac420d8fc35320a", "enumset"),
     ],
 )
-def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
-    TargetChildAsset(
+def test_parent_asset_ok(target: str, webid: str, repo: Repository, child: str):
+    _TargetChildAsset(
         _repo=repo,
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
@@ -91,24 +115,24 @@ def test_parent_asset_ok(target: str, webid: WebId, repo: Repository, child: str
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "item"),
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "point"),
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "node"),
-        ("dataserver", WebId.make(input="dase668540fb5ac420d8fc35320a"), "database"),
-        ("dataserver", WebId.make(input="dase668540fb5ac420d8fc35320a"), "view"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "assetserver"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "point"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "keyword"),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "database"),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "node"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "view"),
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "enumset"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "item"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "point"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "node"),
+        ("dataserver", "dase668540fb5ac420d8fc35320a", "database"),
+        ("dataserver", "dase668540fb5ac420d8fc35320a", "view"),
+        ("database", "daba668540fb5ac420d8fc35320a", "assetserver"),
+        ("database", "daba668540fb5ac420d8fc35320a", "point"),
+        ("database", "daba668540fb5ac420d8fc35320a", "keyword"),
+        ("node", "node668540fb5ac420d8fc35320a", "database"),
+        ("item", "item668540fb5ac420d8fc35320a", "node"),
+        ("database", "daba668540fb5ac420d8fc35320a", "view"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "enumset"),
     ],
 )
-def test_parent_asset_nok(target: str, webid: WebId, repo: Repository, child: str):
+def test_parent_asset_nok(target: str, webid: str, repo: Repository, child: str):
 
     with pytest.raises(expected_exception=ObjHierarchyError):
-        TargetChildAsset(
+        _TargetChildAsset(
             _repo=repo,
             _check_id=check_id,
             _check_hierarchy=check_hierarchy,

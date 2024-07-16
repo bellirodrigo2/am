@@ -8,6 +8,12 @@ class AMError(Exception):
         self.message = message
 
 
+class InvalidIdError(AMError):
+    def __init__(self, id: str) -> None:
+        msg = f"{id=}"
+        super().__init__(msg)
+
+
 class InconsistentIdTypeError(AMError):
     def __init__(self, target: str, webid: str) -> None:
         msg = f"{target=}, {webid=}"

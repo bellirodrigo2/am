@@ -1,21 +1,45 @@
-from dataclasses import dataclass
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-@dataclass(frozen=True, slots=True)
-class GetClass:
-    assetserver: type = int
-    dataserver: type = str
-
-    def __get__(self, instance, owner) -> None:  # type: ignore
-        print(instance, owner)  # type: ignore
+class Base(DeclarativeBase): ...
 
 
-class Teste:
-    getcls_asset_server = GetClass()
+def byte_rep(b: bytes) -> int:
+    return int.from_bytes(b, byteorder="little")
 
 
-g = Teste()
-g.getclass
+class Label(Base):
+    __tablename__ = "label"
+
+    name: Mapped[str] = mapped_column(primary_key=True)
+    type: Mapped[int]
+
+
+print(type(Label))
+# print(b"node".decode("utf-8"))
+# print(b"item".decode("utf-8"))
+# print(b"daba".decode("utf-8"))
+# print(b"asse".decode("utf-8"))
+# print(b"teno".decode("utf-8"))
+
+# from dataclasses import dataclass
+
+
+# @dataclass(frozen=True, slots=True)
+# class GetClass:
+#     assetserver: type = int
+#     dataserver: type = str
+
+#     def __get__(self, instance, owner) -> None:  # type: ignore
+#         print(instance, owner)  # type: ignore
+
+
+# class Teste:
+#     getcls_asset_server = GetClass()
+
+
+# g = Teste()
+# g.getclass
 
 # from typing import Any, get_args, get_origin
 

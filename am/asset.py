@@ -1,75 +1,73 @@
 """"""
 
-from collections.abc import Callable, Iterable, Mapping
+from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 
 from am.interfaces import (
-    IdInterface,
     JsonObj,
     ReadAllOptionsInterface,
     Repository,
     SortOrder,
     TreeNodeInterface,
-    VisitableInterface,
 )
 
 
 @dataclass(frozen=True, slots=True)
-class TargetAsset:
+class _TargetAsset:
 
     _repo: Repository
     # _rules: ObjectsRules
-    _check_id: Callable[[str, IdInterface], None]
+    _check_id: Callable[[str, str], None]
 
     target: str
-    webid: IdInterface
+    webid: str
 
     def __post_init__(self) -> None:
         self._check_id(self.target, self.webid)
 
 
 @dataclass(frozen=True, slots=True)
-class TargetChildAsset(TargetAsset):
+class _TargetChildAsset(_TargetAsset):
 
     child: str
     _check_hierarchy: Callable[[str, str], None]
 
     def __post_init__(self) -> None:
 
-        TargetAsset.__post_init__(self)
+        _TargetAsset.__post_init__(self)
         self._check_hierarchy(self.target, self.child)
 
 
 @dataclass(frozen=True, slots=True)
-class CreateAsset(TargetChildAsset):
+class CreateAsset(_TargetChildAsset):
 
     _cast: Callable[..., TreeNodeInterface]
 
-    def __call__(self, inpobj: JsonObj) -> JsonObj:
+    async def __call__(self, inpobj: JsonObj) -> JsonObj:
 
         obj: TreeNodeInterface = self._cast(target=self.child, **inpobj)
 
-        self._repo.create(obj=obj, parentid=self.webid)
+        await self._repo.create(obj=obj)
 
         return {f"{self.child}": obj}
 
 
 @dataclass(frozen=True, slots=True)
-class ReadOneAsset(TargetAsset):
+class ReadOneAsset(_TargetAsset):
 
     _split_fields: Callable[..., tuple[set[str], set[str]]]
 
-    def __call__(self, *fields: str) -> JsonObj:
+    async def __call__(self, *fields: str) -> JsonObj:
 
         inters, out = self._split_fields(self.target, *fields)
 
-        obj = self._repo.read(*inters)
+        obj = await self._repo.read(*inters)
 
         return {f"{self.target}": obj, "Errors": {"Unknown Fields": out}}
 
 
 @dataclass(frozen=True, slots=True)
-class ReadManyAsset(TargetChildAsset):
+class ReadManyAsset(_TargetChildAsset):
 
     _split_fields: Callable[..., tuple[set[str], set[str]]]
 
@@ -82,25 +80,26 @@ class ReadManyAsset(TargetChildAsset):
         pag_options: tuple[int, int] | None = None
         selected_fields: tuple[str, ...] = ()
 
-    def __call__(self, options: ReadAllOptionsInterface | None = None) -> JsonObj:
+    async def __call__(self, options: ReadAllOptionsInterface | None = None) -> JsonObj:
 
         _options: ReadAllOptionsInterface = options or ReadManyAsset.ReadAllOptions()
 
         inters, out = self._split_fields(self.target, *_options.selected_fields)
 
         _options.selected_fields = tuple(inters)
-        objs = (self._repo.list(options=options),)
+        objs = await self._repo.list(options=options)
 
         return {f"{self.child}s": objs, "Errors": {"Unknown Fields": out}}
 
 
-class UpdateAsset(TargetChildAsset):
-    def __call__(self, updobj: JsonObj) -> JsonObj:
+class UpdateAsset(_TargetChildAsset):
+
+    async def __call__(self, updobj: JsonObj) -> JsonObj:
         return {}
 
 
-class DeleteAsset(TargetAsset):
+class DeleteAsset(_TargetAsset):
 
-    def __call__(self) -> None:
+    async def __call__(self) -> None:
 
-        self._repo.delete()
+        await self._repo.delete()

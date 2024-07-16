@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, Generic, TypeVar
 
 from sqlalchemy import (
     Column,
@@ -21,8 +21,7 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
-# from am.interfaces import IdInterface, TreeNodeInterface, VisitorInterface
-# from am.visitor import Visitor
+from am.interfaces import IdInterface, JsonObj, TreeNodeInterface
 
 
 class Base(DeclarativeBase): ...
@@ -80,6 +79,38 @@ class Item(Label):
 
     def __repr__(self):
         return f"{self.__class__.__name__}({self.name!r}, {self.data_point}, {self.data_type})"
+
+
+class TemplateNode(Label):
+    __tablename__ = "tempalte_node"
+
+    id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("label.id"), primary_key=True
+    )
+    extensible: Mapped[bool]
+
+    __mapper_args__ = {
+        "polymorphic_identity": byte_rep(b"teno"),
+    }
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name!r}, {self.extensible})"
+
+
+class TemplateItem(Label):
+    __tablename__ = "template_item"
+
+    id: Mapped[str] = mapped_column(
+        String(32), ForeignKey("label.id"), primary_key=True
+    )
+    temp_item: Mapped[str]
+
+    __mapper_args__ = {
+        "polymorphic_identity": byte_rep(b"teit"),
+    }
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self.name!r}, {self.temp_item})"
 
 
 link = Table(
@@ -244,26 +275,50 @@ with engine.begin() as conn:
         print(r._asdict())  # type: ignore
 
 
-# class ObjVisitor(Visitor): ...
+_T = TypeVar("_T")
 
 
-# @dataclass(frozen=True, slots=True)
-# class SQLRepository:
+class _Getter(Generic[_T]):
+    def get(self, target: str) -> _T:
+        return getattr(self, target)
 
-#     _closure: LinkTable
-#     _table_getter: VisitorInterface
-#     _engine: Engine
 
-#     def create(self, obj: TreeNodeInterface, parentid: IdInterface) -> None:
+@dataclass()
+class GetTable(_Getter[Any]):
+    node: Node
+    item: Item
 
-#         with Session(self._engine) as session:
 
-#             obj_table = self._table_getter.visit(obj)
-#             db_obj = obj_table(obj)
-#             session.add(db_obj)
-#             session.commit()
+@dataclass(frozen=True, slots=True)
+class SQLRepository:
 
-#         with self._engine.begin() as conn:
-#             iobj, ilinks = self._closure.insert_link(str(parentid), str(obj.web_id))
-#             conn.execute(iobj)
-#             conn.execute(ilinks)
+    _closure: LinkTable
+    _table_getter: GetTable = field(init=False)
+    _obj_table: Table = field(init=False)
+    _engine: Engine
+    id: IdInterface
+
+    def __post_init__(self):
+        self._obj_table = self._table_getter.get(self.id.prefix.decode("utf-8"))
+
+    # TODO parece padrão...pegar as tables por id.prefix.decode('utf-8')
+    async def create(self, obj: TreeNodeInterface) -> None:
+
+        # TODO special case se obj for um template
+
+        with Session(self._engine) as session:
+
+            db_obj = self.obj_table(obj)
+            session.add(db_obj)
+            session.commit()
+
+        with self._engine.begin() as conn:
+            iobj, ilinks = self._closure.insert_link(str(self.id), str(obj.web_id))
+            conn.execute(iobj)
+            conn.execute(ilinks)
+
+    async def read(self, *fields: str) -> JsonObj:
+
+        with Session(self._engine) as session:
+            q = session.query(self.obj_table).where(self.obj_table.id == self.id)
+            return q.one()

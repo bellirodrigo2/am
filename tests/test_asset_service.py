@@ -4,7 +4,7 @@ import json
 from collections.abc import Iterable, Mapping
 from pathlib import Path
 from typing import Any
-from unittest.mock import MagicMock
+from unittest.mock import AsyncMock
 
 import pytest
 from pydantic import ValidationError
@@ -17,7 +17,6 @@ from am.schemas.objrules import (
     make_input_object,
     split_fields,
 )
-from am.schemas.webid import WebId
 
 obj_file: Path = Path.cwd() / "tests/objs.json"
 with open(file=obj_file) as f:
@@ -27,7 +26,7 @@ with open(file=obj_file) as f:
 
 @pytest.fixture
 def repo() -> Repository:
-    return MagicMock()
+    return AsyncMock()
 
 
 @pytest.mark.parametrize(
@@ -35,33 +34,33 @@ def repo() -> Repository:
     [
         (
             "assetserver",
-            WebId.make(input="asse668540fb5ac420d8fc35320a"),
+            "asse668540fb5ac420d8fc35320a",
             "database",
             inputs["databases"],
         ),
         (
             "node",
-            WebId.make(input="node668540fb5ac420d8fc35320a"),
+            "node668540fb5ac420d8fc35320a",
             "view",
             inputs["views"],
         ),
         (
             "node",
-            WebId.make(input="node668540fb5ac420d8fc35320a"),
+            "node668540fb5ac420d8fc35320a",
             "node",
             inputs["nodes"],
         ),
         (
             "item",
-            WebId.make(input="item668540fb5ac420d8fc35320a"),
+            "item668540fb5ac420d8fc35320a",
             "item",
             inputs["items"],
         ),
     ],
 )
-def test_create_asset_ok(
+async def test_create_asset_ok(
     target: str,
-    webid: WebId,
+    webid: str,
     repo: Repository,
     child: str,
     objs: Iterable[Mapping[str, Any]],
@@ -78,15 +77,11 @@ def test_create_asset_ok(
     )
     for obj in objs:
         repo.reset_mock()  # type: ignore
-        create(obj)
-        # res: Mapping[str, Any] = create(obj)
-        # print(res)
+        await create(obj)
         repo.create.assert_called_once()  # type: ignore
-        # assert "webid" in res
-        # create._check_id(child, res["webid"])  # type: ignore
 
 
-def test_create_asset_empty(
+async def test_create_asset_empty(
     repo: Repository,
 ):
     create = CreateAsset(
@@ -94,16 +89,14 @@ def test_create_asset_empty(
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
         _cast=make_input_object,
-        # _make_id=make_id,
         target="node",
-        webid=WebId.make(input="node668540fb5ac420d8fc35320a"),
+        webid="node668540fb5ac420d8fc35320a",
         child="node",
     )
-    res1: Mapping[str, Any] = create({})
+    res1: Mapping[str, Any] = await create({})
     repo.create.assert_called_once()  # type: ignore
-    res2: Mapping[str, Any] = create({})
-    res3: Mapping[str, Any] = create({})
-    # print(res1)
+    res2: Mapping[str, Any] = await create({})
+    res3: Mapping[str, Any] = await create({})
     assert (
         res1["node"].name != res2["node"].name
         and res2["node"].name != res3["node"].name
@@ -121,7 +114,7 @@ def test_create_asset_empty(
     )
 
 
-def test_create_asset_wrong_field(
+async def test_create_asset_wrong_field(
     repo: Repository,
 ):
     create = CreateAsset(
@@ -131,41 +124,25 @@ def test_create_asset_wrong_field(
         _cast=make_input_object,
         # _make_id=make_id,
         target="node",
-        webid=WebId.make(input="node668540fb5ac420d8fc35320a"),
+        webid="node668540fb5ac420d8fc35320a",
         child="node",
     )
     with pytest.raises(expected_exception=ValidationError):
-        create({"NoExistentKey": "foobar"})
+        await create({"NoExistentKey": "foobar"})
 
 
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        (
-            "assetserver",
-            WebId.make(input="asse668540fb5ac420d8fc35320a"),
-            "database",
-        ),
-        (
-            "database",
-            WebId.make(input="daba668540fb5ac420d8fc35320a"),
-            "node",
-        ),
-        (
-            "node",
-            WebId.make(input="node668540fb5ac420d8fc35320a"),
-            "node",
-        ),
-        (
-            "item",
-            WebId.make(input="item668540fb5ac420d8fc35320a"),
-            "item",
-        ),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
+        ("database", "daba668540fb5ac420d8fc35320a", "node"),
+        ("node", "node668540fb5ac420d8fc35320a", "node"),
+        ("item", "item668540fb5ac420d8fc35320a", "item"),
     ],
 )
-def test_create_asset_nok(
+async def test_create_asset_nok(
     target: str,
-    webid: WebId,
+    webid: str,
     repo: Repository,
     child: str,
 ):
@@ -174,27 +151,26 @@ def test_create_asset_nok(
         _check_id=check_id,
         _check_hierarchy=check_hierarchy,
         _cast=make_input_object,
-        # _make_id=make_id,
         target=target,
         webid=webid,
         child=child,
     )
     for obj in inputs["assetservers"]:
         with pytest.raises(expected_exception=ValidationError):
-            create(obj)
+            await create(obj)
 
 
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a")),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a")),
-        ("keyword", WebId.make(input="kewo668540fb5ac420d8fc35320a")),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a")),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a")),
+        ("assetserver", "asse668540fb5ac420d8fc35320a"),
+        ("database", "daba668540fb5ac420d8fc35320a"),
+        ("keyword", "kewo668540fb5ac420d8fc35320a"),
+        ("node", "node668540fb5ac420d8fc35320a"),
+        ("item", "item668540fb5ac420d8fc35320a"),
     ],
 )
-def test_readone_asset_ok(target: str, webid: WebId, repo: Repository):
+async def test_readone_asset_ok(target: str, webid: str, repo: Repository):
     readone = ReadOneAsset(
         _repo=repo,
         _check_id=check_id,
@@ -203,20 +179,20 @@ def test_readone_asset_ok(target: str, webid: WebId, repo: Repository):
         webid=webid,
     )
     repo.reset_mock()  # type: ignore
-    readone()
+    await readone()
     repo.read.assert_called_once()  # type: ignore
 
 
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", WebId.make(input="asse668540fb5ac420d8fc35320a"), "database"),
-        ("database", WebId.make(input="daba668540fb5ac420d8fc35320a"), "node"),
-        ("node", WebId.make(input="node668540fb5ac420d8fc35320a"), "node"),
-        ("item", WebId.make(input="item668540fb5ac420d8fc35320a"), "item"),
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
+        ("database", "daba668540fb5ac420d8fc35320a", "node"),
+        ("node", "node668540fb5ac420d8fc35320a", "node"),
+        ("item", "item668540fb5ac420d8fc35320a", "item"),
     ],
 )
-def test_readmany_asset_ok(target: str, webid: WebId, repo: Repository, child: str):
+async def test_readmany_asset_ok(target: str, webid: str, repo: Repository, child: str):
     readmany = ReadManyAsset(
         _repo=repo,
         _check_id=check_id,
@@ -228,5 +204,5 @@ def test_readmany_asset_ok(target: str, webid: WebId, repo: Repository, child: s
     )
 
     repo.reset_mock()  # type: ignore
-    readmany()
+    await readmany()
     repo.list.assert_called_once()  # type: ignore

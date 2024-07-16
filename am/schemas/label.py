@@ -7,6 +7,7 @@ from pydantic import AliasGenerator, BaseModel, ConfigDict, Field
 from pydantic.alias_generators import to_camel
 
 from am.schemas.config import get_schema_settings
+from am.schemas.id_.objectid import ObjectId
 
 ObjConfig = partial(
     ConfigDict,
