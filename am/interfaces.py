@@ -24,6 +24,8 @@ class TreeNodeInterface(VisitableInterface, Protocol):
     @property
     def web_id(self) -> str: ...
 
+    def dump(self) -> Mapping[str, Any]: ...
+
 
 class SortOrder(Enum):
     Asc = "asc"

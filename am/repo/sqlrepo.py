@@ -21,14 +21,16 @@ from sqlalchemy import (
 )
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
-from am.interfaces import IdInterface, JsonObj, TreeNodeInterface
-
 
 class Base(DeclarativeBase): ...
 
 
 def byte_rep(b: bytes) -> int:
     return int.from_bytes(b, byteorder="little")
+
+
+def int_rep(n: int) -> bytes:
+    return n.to_bytes(4, "little")
 
 
 class Label(Base):
@@ -50,7 +52,7 @@ class Label(Base):
 class Node(Label):
     __tablename__ = "node"
 
-    id: Mapped[str] = mapped_column(
+    fid: Mapped[str] = mapped_column(
         String(32), ForeignKey("label.id"), primary_key=True
     )
     template: Mapped[str] = mapped_column(String(64), nullable=True)
@@ -67,7 +69,7 @@ class Node(Label):
 class Item(Label):
     __tablename__ = "item"
 
-    id: Mapped[str] = mapped_column(
+    fid: Mapped[str] = mapped_column(
         String(32), ForeignKey("label.id"), primary_key=True
     )
     data_point: Mapped[str] = mapped_column(String(128), nullable=True)
@@ -125,7 +127,22 @@ Index("tree_idx", link.c.parent, link.c.depth, link.c.child, unique=True)
 Index("tree_idx2", link.c.child, link.c.parent, link.c.depth, unique=True)
 
 
-@dataclass(frozen=True)
+@dataclass(frozen=True, slots=True)
+class TableWrap:
+
+    tab: Any
+
+    @property
+    def id(self) -> Column[str]:
+        return self.tab.id
+
+    def get_col(self, col_name: str):
+        return getattr(self.tab, col_name)
+
+    def make(self): ...
+
+
+@dataclass(frozen=True, slots=True)
 class LinkTable:
 
     tab: Table = field(default=link)
@@ -141,8 +158,6 @@ class LinkTable:
     @property
     def depth(self) -> Column[str]:
         return self.tab.c.depth
-
-    # TODO no fim de que sr chamado por func(target:str, *fields:str)
 
     def select_children(self, obj: Any, id: str, *fields: str) -> Select[Any]:
 
@@ -273,6 +288,7 @@ with engine.begin() as conn:
     res = conn.execute(stmt)
     for r in res:
         print(r._asdict())  # type: ignore
+        print(int_rep(r._asdict()["type"]))
 
 
 _T = TypeVar("_T")
@@ -302,7 +318,7 @@ class SQLRepository:
     id: str
 
     _table_getter: _GetTable = field(default=table_getter)
-    _obj_table: Table = field(init=False)
+    _obj_table: type[Label] = field(init=False)
 
     def __post_init__(self):
 
@@ -314,17 +330,17 @@ class SQLRepository:
 
         with Session(self._engine) as session:
 
-            db_obj = self.obj_table(obj)
+            db_obj = self._obj_table(**obj.dump())
             session.add(db_obj)
             session.commit()
 
         with self._engine.begin() as conn:
-            iobj, ilinks = self._closure.insert_link(str(self.id), str(obj.web_id))
+            iobj, ilinks = self._closure.insert_link(self.id, str(obj.web_id))
             conn.execute(iobj)
             conn.execute(ilinks)
 
     async def read(self, *fields: str) -> JsonObj:
 
         with Session(self._engine) as session:
-            q = session.query(self.obj_table).where(self.obj_table.id == self.id)
+            q = session.query(self._obj_table).where(self._obj_table.web_id == self.id)
             return q.one()
