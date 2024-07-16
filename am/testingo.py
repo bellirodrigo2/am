@@ -1,21 +1,35 @@
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from dataclasses import dataclass
 
 
-class Base(DeclarativeBase): ...
+@dataclass(frozen=True, slots=True)
+class _ParentConstraint:
+    assetserver: str
+    dataserver: int
+    database: str
+    user: bool
 
 
-def byte_rep(b: bytes) -> int:
-    return int.from_bytes(b, byteorder="little")
+p = _ParentConstraint(assetserver="foo", dataserver=4, database="bar", user=True)
+vals = [getattr(p, s) for s in p.__slots__]
+print(vals)
+# from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
-class Label(Base):
-    __tablename__ = "label"
-
-    name: Mapped[str] = mapped_column(primary_key=True)
-    type: Mapped[int]
+# class Base(DeclarativeBase): ...
 
 
-print(type(Label))
+# def byte_rep(b: bytes) -> int:
+#     return int.from_bytes(b, byteorder="little")
+
+
+# class Label(Base):
+#     __tablename__ = "label"
+
+#     name: Mapped[str] = mapped_column(primary_key=True)
+#     type: Mapped[int]
+
+
+# print(type(Label))
 # print(b"node".decode("utf-8"))
 # print(b"item".decode("utf-8"))
 # print(b"daba".decode("utf-8"))

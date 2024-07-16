@@ -42,14 +42,11 @@ def test_target_asset_ok(target: str, webid: str, repo: Repository):
     "target, webid",
     [
         ("assetserver", "asse668540fb5xxxxac420d8fc35320a"),
-        ("dataserver", "dase668540fb5axxxxxc420d8fc35320a"),
-        ("enumset", "enum668320a"),
-        ("database", "daba668540fb58fc35320a"),
-        ("keyword", "kewo6Aac420d8fc35320a"),
+        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
         ("view", "view66820a"),
         ("node", "node6685XX"),
-        ("templatenode", "teno66850a"),
-        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
+        ("database", "base668540fb5ac420d8fc35320a"),
+        ("keyword", "root668540fb5ac420d8fc35320a"),
     ],
 )
 def test_target_asset_invalidid_nok(target: str, webid: str, repo: Repository):
@@ -67,9 +64,9 @@ def test_target_asset_invalidid_nok(target: str, webid: str, repo: Repository):
     "target, webid",
     [
         ("assetserver", "node668540fb5ac420d8fc35320a"),
-        ("database", "elem668540fb5ac420d8fc35320a"),
-        ("view", "base668540fb5ac420d8fc35320a"),
-        ("node", "root668540fb5ac420d8fc35320a"),
+        ("database", "asse668540fb5ac420d8fc35320a"),
+        ("view", "item668540fb5ac420d8fc35320a"),
+        ("node", "dase668540fb5ac420d8fc35320a"),
         ("item", "node668540fb5ac420d8fc35320a"),
         ("templatenode", "node668540fb5ac420d8fc35320a"),
         ("enumset", "daba668540fb5ac420d8fc35320a"),

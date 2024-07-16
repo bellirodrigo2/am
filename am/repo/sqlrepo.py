@@ -296,10 +296,12 @@ class SQLRepository:
     _table_getter: GetTable = field(init=False)
     _obj_table: Table = field(init=False)
     _engine: Engine
-    id: IdInterface
+
+    obj_type: str
+    id: str
 
     def __post_init__(self):
-        self._obj_table = self._table_getter.get(self.id.prefix.decode("utf-8"))
+        self._obj_table = self._table_getter.get(self.obj_type)
 
     # TODO parece padrão...pegar as tables por id.prefix.decode('utf-8')
     async def create(self, obj: TreeNodeInterface) -> None:

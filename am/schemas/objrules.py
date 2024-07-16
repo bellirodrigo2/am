@@ -1,4 +1,4 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any, Container, Generic, TypeVar
 
 from am.exceptions import InconsistentIdTypeError, InvalidIdError, ObjHierarchyError
@@ -50,20 +50,20 @@ class _GetClass(_Getter[type[BaseClass]]):
 
 @dataclass(frozen=True, slots=True)
 class _GetByte(_Getter[bytes]):
-    assetserver = b"asse"
-    dataserver = b"dase"
-    database = b"daba"
-    user = b"user"
-    keyword = b"kewo"
-    enumset = b"enum"
-    point = b"poin"
-    view = b"view"
-    node = b"node"
-    templatenode = b"teno"
-    item = b"item"
-    templateitem = b"teit"
-    collection = b"cole"
-    metadata = b"meta"
+    assetserver: bytes = field(default=b"asse")
+    dataserver: bytes = field(default=b"dase")
+    database: bytes = field(default=b"daba")
+    user: bytes = field(default=b"user")
+    keyword: bytes = field(default=b"kewo")
+    enumset: bytes = field(default=b"enum")
+    point: bytes = field(default=b"poin")
+    view: bytes = field(default=b"view")
+    node: bytes = field(default=b"node")
+    templatenode: bytes = field(default=b"teno")
+    item: bytes = field(default=b"item")
+    templateitem: bytes = field(default=b"teit")
+    collection: bytes = field(default=b"cole")
+    metadata: bytes = field(default=b"meta")
 
 
 constr = Container[str]
@@ -91,6 +91,8 @@ class_getter = _GetClass()
 byte_getter = _GetByte()
 parent_constr_getter = _ParentConstraint()
 
+literal_bytes = [getattr(byte_getter, s) for s in byte_getter.__slots__]
+
 
 @dataclass(frozen=True)
 class WebId:
@@ -99,9 +101,14 @@ class WebId:
 
     def __post_init__(self):
 
-        # validate pref here
+        if self.pref not in literal_bytes:
+            raise InvalidIdError(str(self.pref))
 
-        id = ObjectId(self.bid) or ObjectId()
+        try:
+            id = ObjectId(self.bid) or ObjectId()
+        except InvalidId:
+            raise InvalidIdError(self.bid)  # type: ignore
+
         object.__setattr__(self, "bid", id)
 
     def __str__(self) -> str:
@@ -115,12 +122,12 @@ def _cast_id(id: str) -> WebId:
 
     pref = id[:4].encode("utf-8")
 
-    try:
-        oid = ObjectId(id[4:])
-    except InvalidId:
-        raise InvalidIdError(id)
+    # try:
+    oid = id[4:]
+    # except InvalidId:
+    # raise InvalidIdError(id)
 
-    return WebId(pref=pref, bid=str(oid))
+    return WebId(pref=pref, bid=oid)
 
 
 def _make_new_id(target: str) -> WebId:
