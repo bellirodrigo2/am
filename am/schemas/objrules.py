@@ -138,9 +138,6 @@ def _cast_id(id: str) -> WebId:
     return WebId(pref=pref, bid=oid)
 
 
-# TODO -----------SE O GET(TARGET, NAO EXISTIR TARGET, VAI RAISE UM ATTRIBUTE ERROR....except e fazer erro personalizado
-
-
 def _make_new_id(target: str) -> WebId:
 
     target_byte = byte_getter.get(target)

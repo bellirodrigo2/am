@@ -15,15 +15,6 @@ class Visitable:
         visitor.visit(self)
 
 
-@dataclass(frozen=True, slots=True)
-class VisitableString(Visitable):
-    key: str
-
-    @property
-    def visitor_rep(self) -> str:
-        return self.key
-
-
 class NonImplementedVisitMethod(Exception):
     pass
 

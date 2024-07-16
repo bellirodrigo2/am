@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
+from typing import Any
 
 from am.interfaces import (
     JsonObj,
@@ -94,8 +95,15 @@ class ReadManyAsset(_TargetChildAsset):
 
 class UpdateAsset(_TargetChildAsset):
 
+    _check_fields: Callable[[str, JsonObj], tuple[Mapping[str, Any], set[str]]]
+
     async def __call__(self, updobj: JsonObj) -> JsonObj:
-        return {}
+
+        inters, out = self._check_fields(self.target, updobj)
+
+        await self._repo.update(**inters)
+
+        return {f"{self.child}": inters, "Errors": {"Unknown Fields": out}}
 
 
 class DeleteAsset(_TargetAsset):
