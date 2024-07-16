@@ -1,7 +1,12 @@
 from dataclasses import dataclass, field
 from typing import Any, Container, Generic, TypeVar
 
-from am.exceptions import InconsistentIdTypeError, InvalidIdError, ObjHierarchyError
+from am.exceptions import (
+    InconsistentIdTypeError,
+    InvalidIdError,
+    InvalidTargetError,
+    ObjHierarchyError,
+)
 from am.interfaces import TreeNodeInterface
 from am.schemas.baseclass import BaseClass
 from am.schemas.id_.errors import InvalidId
@@ -91,7 +96,9 @@ class_getter = _GetClass()
 byte_getter = _GetByte()
 parent_constr_getter = _ParentConstraint()
 
-literal_bytes = [getattr(byte_getter, s) for s in byte_getter.__slots__]
+
+literal_targets = [s for s in byte_getter.__slots__]
+literal_bytes = [getattr(byte_getter, s) for s in literal_targets]
 
 
 @dataclass(frozen=True)
@@ -118,16 +125,20 @@ class WebId:
         return self.pref + self.bid.encode("utf-8")  # type: ignore
 
 
+def _check_target_valid(target: str) -> None:
+    if target not in literal_targets:
+        raise InvalidTargetError(target)
+
+
 def _cast_id(id: str) -> WebId:
 
     pref = id[:4].encode("utf-8")
-
-    # try:
     oid = id[4:]
-    # except InvalidId:
-    # raise InvalidIdError(id)
 
     return WebId(pref=pref, bid=oid)
+
+
+# TODO -----------SE O GET(TARGET, NAO EXISTIR TARGET, VAI RAISE UM ATTRIBUTE ERROR....except e fazer erro personalizado
 
 
 def _make_new_id(target: str) -> WebId:
@@ -138,14 +149,18 @@ def _make_new_id(target: str) -> WebId:
 
 def check_id(target: str, id: str) -> None:
 
+    _check_target_valid(target)
     webid = _cast_id(id=id)
+    # try:
     target_byte = byte_getter.get(target)
+    # except AttributeError:
     if target_byte != webid.pref:
         raise InconsistentIdTypeError(target=target, webid=str(id))
 
 
 def check_hierarchy(target: str, child: str) -> None:
 
+    _check_target_valid(child)
     parent_constr = parent_constr_getter.get(child)
     if target not in parent_constr:
         raise ObjHierarchyError(target, child)

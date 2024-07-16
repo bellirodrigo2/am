@@ -5,7 +5,12 @@ from unittest.mock import MagicMock
 import pytest
 
 from am.asset import _TargetAsset, _TargetChildAsset  # type: ignore
-from am.exceptions import InconsistentIdTypeError, InvalidIdError, ObjHierarchyError
+from am.exceptions import (
+    InconsistentIdTypeError,
+    InvalidIdError,
+    InvalidTargetError,
+    ObjHierarchyError,
+)
 from am.interfaces import Repository
 from am.schemas.objrules import check_hierarchy, check_id
 
@@ -36,6 +41,24 @@ def test_target_asset_ok(target: str, webid: str, repo: Repository):
         target=target,
         webid=webid,
     )
+
+
+@pytest.mark.parametrize(
+    "target, webid",
+    [
+        ("notarget", "daba668540fb5ac420d8fc35320a"),
+        ("nochild", "daba668540fb5ac420d8fc35320a"),
+    ],
+)
+def test_target_asset_invalid_target_nok(target: str, webid: str, repo: Repository):
+
+    with pytest.raises(expected_exception=InvalidTargetError):
+        _TargetAsset(
+            _repo=repo,
+            _check_id=check_id,
+            target=target,
+            webid=webid,
+        )
 
 
 @pytest.mark.parametrize(
@@ -107,6 +130,29 @@ def test_parent_asset_ok(target: str, webid: str, repo: Repository, child: str):
         webid=webid,
         child=child,
     )
+
+
+@pytest.mark.parametrize(
+    "target, webid, child",
+    [
+        ("assetserver", "asse668540fb5ac420d8fc35320a", "nochild"),
+        ("dataserver", "dase668540fb5ac420d8fc35320a", "noexist"),
+        ("database", "daba668540fb5ac420d8fc35320a", "foobar"),
+    ],
+)
+def test_parent_asset_invalid_child_nok(
+    target: str, webid: str, repo: Repository, child: str
+):
+
+    with pytest.raises(expected_exception=InvalidTargetError):
+        _TargetChildAsset(
+            _repo=repo,
+            _check_id=check_id,
+            _check_hierarchy=check_hierarchy,
+            target=target,
+            webid=webid,
+            child=child,
+        )
 
 
 @pytest.mark.parametrize(

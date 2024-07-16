@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 
 
 @dataclass(frozen=True, slots=True)
@@ -8,12 +9,18 @@ class _ParentConstraint:
     database: str
     user: bool
 
+    def get(self, target: str) -> Any:
+        return getattr(self, target)
+
 
 p = _ParentConstraint(assetserver="foo", dataserver=4, database="bar", user=True)
+print(p.get("user"))
+# print(p.get("noKey"))
 vals = [getattr(p, s) for s in p.__slots__]
 print(vals)
 # from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
-
+for s in p.__slots__:
+    print(s)
 
 # class Base(DeclarativeBase): ...
 

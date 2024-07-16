@@ -8,6 +8,12 @@ class AMError(Exception):
         self.message = message
 
 
+class InvalidTargetError(AMError):
+    def __init__(self, target: str) -> None:
+        msg = f"{target=}"
+        super().__init__(msg)
+
+
 class InvalidIdError(AMError):
     def __init__(self, id: str) -> None:
         msg = f"{id=}"

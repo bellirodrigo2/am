@@ -283,27 +283,31 @@ class _Getter(Generic[_T]):
         return getattr(self, target)
 
 
-@dataclass()
-class GetTable(_Getter[Any]):
-    node: Node
-    item: Item
+@dataclass(frozen=True, slots=True)
+class _GetTable(_Getter[Any]):
+    node: type = field(default=Node)
+    item: type = field(default=Item)
+
+
+table_getter = _GetTable()
 
 
 @dataclass(frozen=True, slots=True)
 class SQLRepository:
 
     _closure: LinkTable
-    _table_getter: GetTable = field(init=False)
-    _obj_table: Table = field(init=False)
     _engine: Engine
 
     obj_type: str
     id: str
 
-    def __post_init__(self):
-        self._obj_table = self._table_getter.get(self.obj_type)
+    _table_getter: _GetTable = field(default=table_getter)
+    _obj_table: Table = field(init=False)
 
-    # TODO parece padrão...pegar as tables por id.prefix.decode('utf-8')
+    def __post_init__(self):
+
+        object.__setattr__(self, "_obj_table", self._table_getter.get(self.obj_type))
+
     async def create(self, obj: TreeNodeInterface) -> None:
 
         # TODO special case se obj for um template
