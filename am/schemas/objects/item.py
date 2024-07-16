@@ -3,7 +3,7 @@
 from pydantic import Field
 
 from am.schemas.baseclass import BaseClass
-from am.schemas.datatype import DataType
+from am.schemas.objects.datatype import DataType
 
 
 class Item(BaseClass):

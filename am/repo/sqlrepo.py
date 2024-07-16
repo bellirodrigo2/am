@@ -36,7 +36,7 @@ def int_rep(n: int) -> bytes:
 class Label(Base):
     __tablename__ = "label"
 
-    id: Mapped[str] = mapped_column(String(32), primary_key=True)
+    web_id: Mapped[str] = mapped_column(String(32), primary_key=True)
     name: Mapped[str]
     type: Mapped[int]
 
@@ -53,7 +53,7 @@ class Node(Label):
     __tablename__ = "node"
 
     fid: Mapped[str] = mapped_column(
-        String(32), ForeignKey("label.id"), primary_key=True
+        String(32), ForeignKey("label.web_id"), primary_key=True
     )
     template: Mapped[str] = mapped_column(String(64), nullable=True)
     detached: Mapped[str] = mapped_column(String(8))
@@ -70,7 +70,7 @@ class Item(Label):
     __tablename__ = "item"
 
     fid: Mapped[str] = mapped_column(
-        String(32), ForeignKey("label.id"), primary_key=True
+        String(32), ForeignKey("label.web_id"), primary_key=True
     )
     data_point: Mapped[str] = mapped_column(String(128), nullable=True)
     data_type: Mapped[str] = mapped_column(String(16))
@@ -87,7 +87,7 @@ class TemplateNode(Label):
     __tablename__ = "tempalte_node"
 
     id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("label.id"), primary_key=True
+        String(32), ForeignKey("label.web_id"), primary_key=True
     )
     extensible: Mapped[bool]
 
@@ -103,7 +103,7 @@ class TemplateItem(Label):
     __tablename__ = "template_item"
 
     id: Mapped[str] = mapped_column(
-        String(32), ForeignKey("label.id"), primary_key=True
+        String(32), ForeignKey("label.web_id"), primary_key=True
     )
     temp_item: Mapped[str]
 
@@ -134,7 +134,7 @@ class TableWrap:
 
     @property
     def id(self) -> Column[str]:
-        return self.tab.id
+        return self.tab.web_id
 
     def get_col(self, col_name: str):
         return getattr(self.tab, col_name)
@@ -163,11 +163,11 @@ class LinkTable:
 
         cols = [getattr(obj, field) for field in fields]  # if fields else [obj]
 
-        j = join(obj, self.tab, obj.id == self.child)
+        j = join(obj, self.tab, obj.web_id == self.child)
         return select(*cols).select_from(j).where(self.parent == id, self.depth == 1)
 
     def select_descendants(self, obj: Any, id: str, *fields: str) -> Select[Any]:
-        j = join(obj, self.tab, obj.id == self.child)
+        j = join(obj, self.tab, obj.web_id == self.child)
         return (
             select(obj)
             .select_from(j)
@@ -213,11 +213,11 @@ with Session(engine) as session:
     n = 12
 
     nodes = [
-        Node(id=f"{i}", name=f"name{i}", template=f"temp{i}", detached="always")
+        Node(web_id=f"{i}", name=f"name{i}", template=f"temp{i}", detached="always")
         for i in range(n)
     ]
     items = [
-        Item(id=f"{i}", name=f"name{i}", data_point=f"dp{i}", data_type=f"dt{i}")
+        Item(web_id=f"{i}", name=f"name{i}", data_point=f"dp{i}", data_type=f"dt{i}")
         for i in range(n, 2 * n)
     ]
 
@@ -277,7 +277,7 @@ with engine.begin() as conn:
 
 with engine.begin() as conn:
 
-    stmt = link_table.select_children(Node, "2", "id", "name", "template")
+    stmt = link_table.select_children(Node, "2", "web_id", "name", "template")
     res = conn.execute(stmt)
     for r in res:
         print(r)
