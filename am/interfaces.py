@@ -2,7 +2,7 @@
 
 from collections.abc import Iterable, Mapping
 from enum import Enum
-from typing import Any, Protocol
+from typing import Any, Literal, Protocol
 
 JsonObj = Mapping[str, Any]
 
@@ -17,6 +17,18 @@ class VisitableInterface(Protocol):
 
 class VisitorInterface(Protocol):
     def visit(self, element: VisitableInterface) -> Any: ...  # type: ignore
+
+
+class IdInterface(Protocol):
+
+    @property
+    def pref(self) -> bytes: ...
+    @property
+    def bid(self) -> str: ...
+
+    def __str__(self) -> str: ...
+    def __bytes__(self) -> bytes: ...
+    def pref_as_int(self, byteorder: Literal["little", "big"]) -> int: ...
 
 
 class TreeNodeInterface(VisitableInterface, Protocol):

@@ -1,16 +1,10 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
-from typing import Any, TypeVar
+from typing import Any
 
-from am.exceptions import (
-    InconsistentIdTypeError,
-    InvalidIdError,
-    InvalidTargetError,
-    ObjHierarchyError,
-)
-from am.interfaces import TreeNodeInterface
+from am.exceptions import InconsistentIdTypeError, InvalidTargetError, ObjHierarchyError
+from am.interfaces import IdInterface, TreeNodeInterface
 from am.schemas.baseclass import BaseClass
-from am.schemas.id_.errors import InvalidId
-from am.schemas.id_.objectid import ObjectId
 from am.schemas.label import make_input_fields, make_update_fields
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.collection import Collection
@@ -26,6 +20,7 @@ from am.schemas.objects.templateitem import TemplateItem
 from am.schemas.objects.templatenode import TemplateNode
 from am.schemas.objects.user import User
 from am.schemas.objects.view import View
+from am.schemas.webid import Id
 
 Rules = tuple[type[BaseClass], bytes, tuple[str, ...]]
 
@@ -75,28 +70,11 @@ literal_targets = [s for s in rules.__slots__]
 literal_bytes = [rules.get_byte(s) for s in literal_targets]
 
 
-@dataclass(frozen=True)
-class WebId:
-    pref: bytes
-    bid: str | None
+class WebId(Id):
 
-    def __post_init__(self):
-
-        if self.pref not in literal_bytes:
-            raise InvalidIdError(str(self.pref))
-
-        try:
-            id = ObjectId(self.bid) or ObjectId()
-        except InvalidId:
-            raise InvalidIdError(self.bid)  # type: ignore
-
-        object.__setattr__(self, "bid", id)
-
-    def __str__(self) -> str:
-        return self.pref.decode(encoding="utf8") + str(self.bid)
-
-    def __bytes__(self) -> bytes:
-        return self.pref + self.bid.encode("utf-8")  # type: ignore
+    @classmethod
+    def _pref_options(cls) -> Iterable[bytes]:
+        return literal_bytes
 
 
 def _check_target_valid(target: str) -> None:
@@ -104,7 +82,7 @@ def _check_target_valid(target: str) -> None:
         raise InvalidTargetError(target)
 
 
-def _cast_id(id: str) -> WebId:
+def _cast_id(id: str) -> IdInterface:
 
     pref = id[:4].encode("utf-8")
     oid = id[4:]
@@ -112,10 +90,10 @@ def _cast_id(id: str) -> WebId:
     return WebId(pref=pref, bid=oid)
 
 
-def _make_new_id(target: str) -> WebId:
+def _make_new_id(target: str) -> IdInterface:
 
     target_byte = rules.get_byte(target)
-    return WebId(pref=target_byte, bid=None)
+    return WebId(pref=target_byte)
 
 
 def check_id(target: str, id: str) -> None:

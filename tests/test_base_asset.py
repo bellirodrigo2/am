@@ -3,6 +3,7 @@
 from unittest.mock import MagicMock
 
 import pytest
+from pydantic import ValidationError
 
 from am.asset import _TargetAsset, _TargetChildAsset  # type: ignore
 from am.exceptions import (
@@ -64,17 +65,33 @@ def test_target_asset_invalid_target_nok(target: str, webid: str, repo: Reposito
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", "asse668540fb5xxxxac420d8fc35320a"),
-        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
-        ("view", "view66820a"),
-        ("node", "node6685XX"),
         ("database", "base668540fb5ac420d8fc35320a"),
         ("keyword", "root668540fb5ac420d8fc35320a"),
     ],
 )
-def test_target_asset_invalidid_nok(target: str, webid: str, repo: Repository):
+def test_target_asset_invalid_pref_nok(target: str, webid: str, repo: Repository):
 
     with pytest.raises(expected_exception=InvalidIdError):
+        _TargetAsset(
+            _repo=repo,
+            _check_id=check_id,
+            target=target,
+            webid=webid,
+        )
+
+
+@pytest.mark.parametrize(
+    "target, webid",
+    [
+        ("assetserver", "asse668540fb5xxxxac420d8fc35320a"),
+        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
+        ("view", "view66820a"),
+        ("node", "node6685XX"),
+    ],
+)
+def test_target_asset_invalid_bid_nok(target: str, webid: str, repo: Repository):
+
+    with pytest.raises(expected_exception=ValidationError):
         _TargetAsset(
             _repo=repo,
             _check_id=check_id,
