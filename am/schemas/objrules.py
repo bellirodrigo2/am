@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Any, Container, Generic, TypeVar
+from typing import Any, TypeVar
 
 from am.exceptions import (
     InconsistentIdTypeError,
@@ -12,7 +12,6 @@ from am.schemas.baseclass import BaseClass
 from am.schemas.id_.errors import InvalidId
 from am.schemas.id_.objectid import ObjectId
 from am.schemas.label import make_input_fields, make_update_fields
-from am.schemas.objects import metadata
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.collection import Collection
 from am.schemas.objects.database import DataBase
@@ -20,6 +19,7 @@ from am.schemas.objects.dataserver import DataServer
 from am.schemas.objects.enumset import EnumSet
 from am.schemas.objects.item import Item
 from am.schemas.objects.keyword import Keyword
+from am.schemas.objects.metadata import Metadata
 from am.schemas.objects.node import Node
 from am.schemas.objects.point import Point
 from am.schemas.objects.templateitem import TemplateItem
@@ -27,78 +27,52 @@ from am.schemas.objects.templatenode import TemplateNode
 from am.schemas.objects.user import User
 from am.schemas.objects.view import View
 
-_T = TypeVar("_T")
+Rules = tuple[type[BaseClass], bytes, tuple[str, ...]]
 
 
-class _Getter(Generic[_T]):
-    def get(self, target: str) -> _T:
+@dataclass(frozen=True, slots=True)
+class _GetRules:
+
+    assetserver: Rules = field(default=(AssetServer, b"asse", ()))
+    dataserver: Rules = field(default=(DataServer, b"dase", ()))
+    database: Rules = field(default=(DataBase, b"daba", ("assetserver",)))
+    user: Rules = field(default=(User, b"user", ("assetserver",)))
+    keyword: Rules = field(
+        default=(Keyword, b"kewo", ("node", "item", "templatenode", "templateitem"))
+    )
+    enumset: Rules = field(default=(EnumSet, b"enum", ("database", "user")))
+    point: Rules = field(default=(Point, b"poin", ("dataserver",)))
+    view: Rules = field(
+        default=(View, b"view", ("node", "item", "templatenode", "templateitem"))
+    )
+    node: Rules = field(default=(Node, b"node", ("node", "database", "user")))
+    templatenode: Rules = field(
+        default=(TemplateNode, b"teno", ("templatenode", "database", "user"))
+    )
+    item: Rules = field(default=(Item, b"item", ("node", "item")))
+    templateitem: Rules = field(
+        default=(TemplateItem, b"teit", ("templatenode", "templateitem"))
+    )
+    collection: Rules = field(default=(Collection, b"cole", ("database", "user")))
+    metadata: Rules = field(default=(Metadata, b"meta", ("database", "user")))
+
+    def _get(self, target: str) -> Rules:
         return getattr(self, target)
 
+    def get_class(self, target: str) -> type[BaseClass]:
+        return self._get(target)[0]
 
-@dataclass(frozen=True, slots=True)
-class _GetClass(_Getter[type[BaseClass]]):
-    assetserver = AssetServer
-    dataserver = DataServer
-    database = DataBase
-    user = User
-    keyword = Keyword
-    enumset = EnumSet
-    point = Point
-    view = View
-    node = Node
-    templatenode = TemplateNode
-    item = Item
-    templateitem = TemplateItem
-    collection = Collection
-    metadata = metadata.Metadata
+    def get_byte(self, target: str) -> bytes:
+        return self._get(target)[1]
+
+    def get_parent_constr(self, target: str) -> tuple[str, ...]:
+        return self._get(target)[2]
 
 
-@dataclass(frozen=True, slots=True)
-class _GetByte(_Getter[bytes]):
-    assetserver: bytes = field(default=b"asse")
-    dataserver: bytes = field(default=b"dase")
-    database: bytes = field(default=b"daba")
-    user: bytes = field(default=b"user")
-    keyword: bytes = field(default=b"kewo")
-    enumset: bytes = field(default=b"enum")
-    point: bytes = field(default=b"poin")
-    view: bytes = field(default=b"view")
-    node: bytes = field(default=b"node")
-    templatenode: bytes = field(default=b"teno")
-    item: bytes = field(default=b"item")
-    templateitem: bytes = field(default=b"teit")
-    collection: bytes = field(default=b"cole")
-    metadata: bytes = field(default=b"meta")
+rules = _GetRules()
 
-
-constr = Container[str]
-
-
-@dataclass(frozen=True, slots=True)
-class _ParentConstraint(_Getter[Container[str]]):
-    assetserver: constr = ()
-    dataserver: constr = ()
-    database: constr = ("assetserver",)
-    user: constr = ("assetserver",)
-    enumset: constr = ("database", "user")
-    point: constr = ("dataserver",)
-    view: constr = ("node", "item", "templatenode", "templateitem")
-    node: constr = ("node", "database")
-    templatenode: constr = ("templatenode", "database", "user")
-    item: constr = ("node", "item")
-    templateitem: constr = ("templatenode", "templateitem")
-    collection: constr = ("database", "user")
-    metadata: constr = ("database", "user")
-    keyword: constr = ("node", "item", "templatenode", "templateitem")
-
-
-class_getter = _GetClass()
-byte_getter = _GetByte()
-parent_constr_getter = _ParentConstraint()
-
-
-literal_targets = [s for s in byte_getter.__slots__]
-literal_bytes = [getattr(byte_getter, s) for s in literal_targets]
+literal_targets = [s for s in rules.__slots__]
+literal_bytes = [rules.get_byte(s) for s in literal_targets]
 
 
 @dataclass(frozen=True)
@@ -140,7 +114,7 @@ def _cast_id(id: str) -> WebId:
 
 def _make_new_id(target: str) -> WebId:
 
-    target_byte = byte_getter.get(target)
+    target_byte = rules.get_byte(target)
     return WebId(pref=target_byte, bid=None)
 
 
@@ -148,9 +122,7 @@ def check_id(target: str, id: str) -> None:
 
     _check_target_valid(target)
     webid = _cast_id(id=id)
-    # try:
-    target_byte = byte_getter.get(target)
-    # except AttributeError:
+    target_byte = rules.get_byte(target)
     if target_byte != webid.pref:
         raise InconsistentIdTypeError(target=target, webid=str(id))
 
@@ -158,13 +130,13 @@ def check_id(target: str, id: str) -> None:
 def check_hierarchy(target: str, child: str) -> None:
 
     _check_target_valid(child)
-    parent_constr = parent_constr_getter.get(child)
+    parent_constr = rules.get_parent_constr(child)
     if target not in parent_constr:
         raise ObjHierarchyError(target, child)
 
 
 def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
-    target_cls: type[BaseClass] = class_getter.get(target)
+    target_cls: type[BaseClass] = rules.get_class(target)
 
     new_webid = _make_new_id(target)
     full_kwargs = make_input_fields(webid=str(new_webid), **kwargs)
@@ -174,7 +146,7 @@ def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
 
 def _get_fields(target: str) -> set[str]:
 
-    target_cls: type[BaseClass] = class_getter.get(target)
+    target_cls: type[BaseClass] = rules.get_class(target)
 
     return set(target_cls.model_fields.keys())
 
