@@ -32,19 +32,22 @@
       "name": "NODE1",
       "client_id": "client1",
       "description": "node1 description",
-      "template": "node1Template"
+      "template": "node1Template",
+      "detached": "ondelete"
     },
     {
       "name": "NODE2",
       "client_id": "client2",
       "description": "node2 description",
-      "template": "node2Template"
+      "template": "node2Template",
+      "detached": "always"
     },
     {
       "name": "NODE3",
       "client_id": "client3",
       "description": "node3 description",
-      "template": "node3Template"
+      "template": "node3Template",
+      "detached": "never"
     }
   ],
   "items": [

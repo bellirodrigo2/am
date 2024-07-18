@@ -1,10 +1,12 @@
 """"""
 
 from dataclasses import dataclass
-from typing import Any, Literal
+from typing import Any, Iterable, Literal
 
-from sqlalchemy import Column, Engine, String
+from sqlalchemy import Column, Engine, Row, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+from am.interfaces import JsonObj, TreeNodeInterface
 
 
 class Base(DeclarativeBase): ...
@@ -23,6 +25,9 @@ class Label(Base):
 
     web_id: Mapped[str] = mapped_column(String(32), primary_key=True)
     name: Mapped[str]
+    client_id: Mapped[str]
+    description: Mapped[str]
+
     type: Mapped[int]
 
     __mapper_args__ = {
@@ -43,19 +48,37 @@ class TableWrap:
     def id(self) -> Column[str]:
         return self.tab.fid
 
-    def get_col(self, col_name: str):
-        return getattr(self.tab, col_name)
+    def get_cols(self, col_name: Iterable[str]) -> Iterable[Any]:
 
-    async def add_row(self, engine: Engine, **kwargs: Any) -> None:
+        if not col_name:
+            return [self.tab]
+        return [getattr(self.tab, col) for col in col_name]
+
+    async def add_row(self, engine: Engine, obj: TreeNodeInterface) -> None:
 
         with Session(engine) as session:
 
-            db_obj = self.tab(**kwargs)
+            row = obj.model_dump()
+            row["web_id"] = row["web_id"]["bid"]
+
+            db_obj = self.tab(**row)
             session.add(db_obj)
             session.commit()
 
-    async def read_one(self, engine: Engine, target: str, *fields: str):
+    async def read_one(self, engine: Engine, target: str, *fields: str) -> JsonObj:
+
+        # TODO fazer as conversões de type + fid para web_id
 
         with Session(engine) as session:
-            q = session.query(self.tab).where(self.id == target)
-            return q.one()
+
+            cols = self.get_cols(fields)
+            # sempre adicionar type + webid ???
+
+            q = session.query(*cols).where(self.id == target)
+            row = q.one()
+            row_dict = row._asdict() if fields else row.__dict__
+
+            # remove type....
+            # build web_id from type + webid
+
+            return row_dict

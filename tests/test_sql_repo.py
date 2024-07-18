@@ -1,16 +1,62 @@
 """"""
 
+import json
+from pathlib import Path
+
 import pytest
+
+from am.interfaces import Repository
+from am.repo.closure import LinkTable
+from am.repo.db import bootstrap
+from am.repo.repo import SQLRepository
+from am.schemas.objrules import WebId, make_input_object
 
 
 def test_insert_link_ok(): ...
 
 
-# url = "sqlite://"
-# echo = False
-# link_table = LinkTable()
+url = "sqlite://"
+echo = False
 
-# engine = bootstrap(url, echo)
+engine = bootstrap(url, echo)
+
+obj_file: Path = Path.cwd() / "tests/objs.json"
+with open(file=obj_file) as f:
+    inputs = json.load(fp=f)
+    assert inputs is not None
+
+
+@pytest.fixture
+def repo() -> Repository:
+    link = LinkTable()
+    repo = SQLRepository(link, engine)
+
+    return repo
+
+
+async def test_insert_node_ok(repo: Repository):
+
+    parent = WebId(pref=b"asse")
+    target = "node"
+    obj1, obj2, obj3 = inputs["nodes"]
+
+    node1 = make_input_object(target, **obj1)
+    node2 = make_input_object(target, **obj2)
+    node3 = make_input_object(target, **obj3)
+
+    await repo.create(node1, parent)
+    await repo.create(node2, node1.web_id)
+    await repo.create(node3, node1.web_id)
+
+    read = await repo.read(node1.web_id)
+    print(read)
+
+    read2 = await repo.read(node2.web_id, "name", "type", "web_id")
+    print(read2)
+
+    read3 = await repo.read(node3.web_id, "name")
+    print(read3)
+
 
 # with Session(engine) as session:
 

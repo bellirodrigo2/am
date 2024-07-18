@@ -1,10 +1,11 @@
 """"""
 
 from collections.abc import Callable, Mapping
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 from am.interfaces import (
+    IdInterface,
     JsonObj,
     ReadAllOptionsInterface,
     Repository,
@@ -17,17 +18,19 @@ from am.interfaces import (
 class _TargetAsset:
 
     _repo: Repository
-    _check_id: Callable[[str, str], None]
+    _check_id: Callable[[str, str], IdInterface]
 
     target: str
     webid: str
+    _webid: IdInterface = field(init=False)
 
     def __post_init__(self) -> None:
 
         # check if target is valid
         # check if id is valid
         # check if target and id matches
-        self._check_id(self.target, self.webid)
+        id = self._check_id(self.target, self.webid)
+        object.__setattr__(self, "_webid", id)
 
 
 @dataclass(frozen=True, slots=True)
@@ -53,7 +56,7 @@ class CreateAsset(_TargetChildAsset):
 
         obj: TreeNodeInterface = self._cast(target=self.child, **inpobj)
 
-        await self._repo.create(obj=obj)
+        await self._repo.create(obj=obj, parent=self._webid)
 
         return {f"{self.child}": obj}
 
@@ -67,7 +70,7 @@ class ReadOneAsset(_TargetAsset):
 
         inters, out = self._split_fields(self.target, *fields)
 
-        obj = await self._repo.read(*inters)
+        obj = await self._repo.read(self._webid, *inters)
 
         return {f"{self.target}": obj, "Errors": {"Unknown Fields": out}}
 

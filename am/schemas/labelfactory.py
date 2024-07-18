@@ -22,7 +22,7 @@ settings = get_schema_settings()
 name_gen = make_name(settings.default_name)
 
 
-def make_input_fields(webid: IdInterface, **fields: Any) -> Mapping[str, Any]:
+def make_label(webid: IdInterface, **fields: Any) -> Mapping[str, Any]:
 
     if "name" not in fields:
         fields["name"] = next(name_gen)

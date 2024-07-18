@@ -3,7 +3,6 @@
 from dataclasses import dataclass, field
 from typing import Any
 
-from base_table import Base
 from sqlalchemy import (
     Column,
     Engine,
@@ -20,6 +19,8 @@ from sqlalchemy import (
     over,
     select,
 )
+
+from am.repo.base_table import Base
 
 link = Table(
     "link",

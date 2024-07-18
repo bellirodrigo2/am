@@ -1,8 +1,9 @@
 """"""
 
-from base_table import Label, byte_rep
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
+
+from am.repo.base_table import Label, byte_rep
 
 
 class TemplateItem(Label):

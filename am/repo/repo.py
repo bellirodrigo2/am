@@ -22,7 +22,7 @@ class _GetTable:
 
     def get(self, id: IdInterface) -> TableWrap:
 
-        target = str(id.pref)
+        target = str(id.pref.decode("utf-8"))
         return getattr(self, target)
 
 
@@ -38,15 +38,15 @@ class SQLRepository:
     async def create(self, obj: TreeNodeInterface, parent: IdInterface) -> None:
 
         # TODO special case se obj for um template
-        obj_table: TableWrap = table_getter.get(obj.web_id)
+        obj_table: TableWrap = table_getter.get(id=obj.web_id)
 
-        await obj_table.add_row(engine=self._engine, **obj.model_dump())
+        await obj_table.add_row(engine=self._engine, obj=obj)
         await self._closure.insert_link(
-            engine=self._engine, parentid=str(parent), childid=obj.web_id
+            engine=self._engine, parentid=parent.bid, childid=obj.web_id.bid
         )
 
-    async def read(self, target: IdInterface, *fields: str) -> JsonObj:
+    async def read(self, target_id: IdInterface, *fields: str) -> JsonObj:
 
-        obj_table: TableWrap = table_getter.get(target)
+        obj_table: TableWrap = table_getter.get(target_id)
 
-        return await obj_table.read_one(self._engine, target.bid, *fields)
+        return await obj_table.read_one(self._engine, target_id.bid, *fields)

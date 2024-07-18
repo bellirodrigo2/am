@@ -4,9 +4,7 @@ from typing import Any
 
 from am.exceptions import InconsistentIdTypeError, InvalidTargetError, ObjHierarchyError
 from am.interfaces import IdInterface, TreeNodeInterface
-
-# from am.schemas.baseclass import BaseClass
-from am.schemas.labelfactory import make_input_fields
+from am.schemas.labelfactory import make_label
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.collection import Collection
 from am.schemas.objects.database import DataBase
@@ -97,7 +95,7 @@ def _make_new_id(target: str) -> IdInterface:
     return WebId(pref=target_byte)
 
 
-def check_id(target: str, id: str) -> None:
+def check_id(target: str, id: str) -> IdInterface:
 
     _check_target_valid(target)
 
@@ -105,6 +103,7 @@ def check_id(target: str, id: str) -> None:
     target_byte = rules.get_byte(target)
     if target_byte != webid.pref:
         raise InconsistentIdTypeError(target=target, webid=str(id))
+    return webid
 
 
 def check_hierarchy(target: str, child: str) -> None:
@@ -120,7 +119,7 @@ def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
     target_cls: type[TreeNodeInterface] = rules.get_class(target)
 
     new_webid = _make_new_id(target)
-    full_kwargs = make_input_fields(webid=new_webid, **kwargs)
+    full_kwargs = make_label(webid=new_webid, **kwargs)
 
     return target_cls(**full_kwargs)
 

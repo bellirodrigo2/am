@@ -1,8 +1,9 @@
 """"""
 
-from base_table import Label, byte_rep
 from sqlalchemy import ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column
+
+from am.repo.base_table import Label, byte_rep
 
 
 class Node(Label):
@@ -19,4 +20,4 @@ class Node(Label):
     }
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self.name!r}, {self.template}, {self.detached})"
+        return f"{self.__class__.__name__}({self.name!r},{self.fid}, {self.template}, {self.detached})"
