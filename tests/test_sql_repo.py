@@ -51,10 +51,10 @@ async def test_insert_node_ok(repo: Repository):
     read = await repo.read(node1.web_id)
     print(read)
 
-    read2 = await repo.read(node2.web_id, "name", "type", "web_id")
+    read2 = await repo.read(node2.web_id, "name", "type", "web_id", "description")
     print(read2)
 
-    read3 = await repo.read(node3.web_id, "name")
+    read3 = await repo.read(node3.web_id, "name", "client_id")
     print(read3)
 
 

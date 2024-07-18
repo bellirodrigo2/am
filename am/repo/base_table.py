@@ -48,11 +48,14 @@ class TableWrap:
     def id(self) -> Column[str]:
         return self.tab.fid
 
-    def get_cols(self, col_name: Iterable[str]) -> Iterable[Any]:
+    def get_cols(self, col_name: Iterable[str]) -> set[Any]:
 
         if not col_name:
-            return [self.tab]
-        return [getattr(self.tab, col) for col in col_name]
+            return set([self.tab])
+        cols = set([getattr(self.tab, col) for col in col_name])
+        cols.add(self.tab.web_id)
+        cols.add(self.tab.type)
+        return cols
 
     async def add_row(self, engine: Engine, obj: TreeNodeInterface) -> None:
 
@@ -72,13 +75,13 @@ class TableWrap:
         with Session(engine) as session:
 
             cols = self.get_cols(fields)
-            # sempre adicionar type + webid ???
 
             q = session.query(*cols).where(self.id == target)
             row = q.one()
             row_dict = row._asdict() if fields else row.__dict__
 
             # remove type....
+            full_web_id = row["type"] + row["web_id"]
             # build web_id from type + webid
 
             return row_dict
