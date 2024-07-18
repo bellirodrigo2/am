@@ -17,13 +17,16 @@ from am.interfaces import (
 class _TargetAsset:
 
     _repo: Repository
-    # _rules: ObjectsRules
     _check_id: Callable[[str, str], None]
 
     target: str
     webid: str
 
     def __post_init__(self) -> None:
+
+        # check if target is valid
+        # check if id is valid
+        # check if target and id matches
         self._check_id(self.target, self.webid)
 
 
@@ -36,6 +39,8 @@ class _TargetChildAsset(_TargetAsset):
     def __post_init__(self) -> None:
 
         _TargetAsset.__post_init__(self)
+
+        # check if child can have target as parent
         self._check_hierarchy(self.target, self.child)
 
 

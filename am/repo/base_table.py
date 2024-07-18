@@ -1,21 +1,21 @@
 """"""
 
 from dataclasses import dataclass
-from typing import Any
+from typing import Any, Literal
 
-from sqlalchemy import Column, String
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import Column, Engine, String
+from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
 
 
 class Base(DeclarativeBase): ...
 
 
-def byte_rep(b: bytes) -> int:
-    return int.from_bytes(b, byteorder="little")
+def byte_rep(b: bytes, byteorder: Literal["little", "big"] = "little") -> int:
+    return int.from_bytes(b, byteorder=byteorder)
 
 
-def int_rep(n: int) -> bytes:
-    return n.to_bytes(4, "little")
+def int_rep(n: int, byteorder: Literal["little", "big"] = "little") -> bytes:
+    return n.to_bytes(4, byteorder=byteorder)
 
 
 class Label(Base):
@@ -41,9 +41,21 @@ class TableWrap:
 
     @property
     def id(self) -> Column[str]:
-        return self.tab.web_id
+        return self.tab.fid
 
     def get_col(self, col_name: str):
         return getattr(self.tab, col_name)
 
-    def make_row(self) -> Any: ...
+    async def add_row(self, engine: Engine, **kwargs: Any) -> None:
+
+        with Session(engine) as session:
+
+            db_obj = self.tab(**kwargs)
+            session.add(db_obj)
+            session.commit()
+
+    async def read_one(self, engine: Engine, target: str, *fields: str):
+
+        with Session(engine) as session:
+            q = session.query(self.tab).where(self.id == target)
+            return q.one()

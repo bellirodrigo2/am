@@ -9,6 +9,10 @@ from am.schemas.id_.errors import InvalidId
 from am.schemas.id_.objectid import ObjectId
 
 
+def make_bid() -> str:
+    return str(ObjectId())
+
+
 class Id(BaseModel, ABC):
 
     @classmethod
@@ -17,8 +21,11 @@ class Id(BaseModel, ABC):
 
     pref: bytes = Field(min_length=4, max_length=4, frozen=True)
     bid: str = Field(
-        min_length=24, max_length=24, default_factory=ObjectId, frozen=True
+        min_length=24, max_length=24, default_factory=make_bid, frozen=True
     )
+
+    def __len__(self) -> int:
+        return len(self.pref) + len(self.bid)
 
     @field_validator("pref")
     @classmethod

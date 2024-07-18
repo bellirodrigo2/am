@@ -1,21 +1,28 @@
 from dataclasses import dataclass, field
+from functools import partial
 
 from sqlalchemy import Engine
 from sqlalchemy.orm import Session
 
-from am.interfaces import JsonObj, TreeNodeInterface
+from am.interfaces import IdInterface, JsonObj, TreeNodeInterface
 from am.repo.base_table import TableWrap
 from am.repo.closure import LinkTable
 from am.repo.tables.item import Item
 from am.repo.tables.node import Node
 
+NodeTable = partial(TableWrap, tab=Node)
+ItemTable = partial(TableWrap, tab=Item)
+
 
 @dataclass(frozen=True, slots=True)
 class _GetTable:
-    node: type = field(default=Node)
-    item: type = field(default=Item)
 
-    def get(self, target: str) -> type:
+    node: TableWrap = field(default_factory=NodeTable)
+    item: TableWrap = field(default_factory=ItemTable)
+
+    def get(self, id: IdInterface) -> TableWrap:
+
+        target = str(id.pref)
         return getattr(self, target)
 
 
@@ -28,28 +35,18 @@ class SQLRepository:
     _closure: LinkTable
     _engine: Engine
 
-    obj_type: str
-    id: str
-
-    _obj_table: TableWrap
-
-    async def create(self, obj: TreeNodeInterface) -> None:
+    async def create(self, obj: TreeNodeInterface, parent: IdInterface) -> None:
 
         # TODO special case se obj for um template
+        obj_table: TableWrap = table_getter.get(obj.web_id)
 
-        with Session(self._engine) as session:
+        await obj_table.add_row(engine=self._engine, **obj.model_dump())
+        await self._closure.insert_link(
+            engine=self._engine, parentid=str(parent), childid=obj.web_id
+        )
 
-            db_obj = self._obj_table.make_row(**obj.dump())
-            session.add(db_obj)
-            session.commit()
+    async def read(self, target: IdInterface, *fields: str) -> JsonObj:
 
-        with self._engine.begin() as conn:
-            iobj, ilinks = self._closure.insert_link(self.id, str(obj.web_id))
-            conn.execute(iobj)
-            conn.execute(ilinks)
+        obj_table: TableWrap = table_getter.get(target)
 
-    async def read(self, *fields: str) -> JsonObj:
-
-        with Session(self._engine) as session:
-            q = session.query(self._obj_table.tab).where(self._obj_table.id == self.id)
-            return q.one()
+        return await obj_table.read_one(self._engine, target.bid, *fields)

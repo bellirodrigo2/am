@@ -6,6 +6,7 @@ from typing import Any
 from base_table import Base
 from sqlalchemy import (
     Column,
+    Engine,
     Index,
     Insert,
     Integer,
@@ -65,7 +66,9 @@ class LinkTable:
             .order_by(self.depth.asc())
         )
 
-    def insert_link(self, parentid: str, childid: str) -> tuple[Insert, Insert]:
+    def _make_insert_link_stmt(
+        self, parentid: str, childid: str
+    ) -> tuple[Insert, Insert]:
         sstmt = select(
             self.parent,
             literal(childid),
@@ -81,3 +84,10 @@ class LinkTable:
             sstmt,
         )
         return child, link
+
+    async def insert_link(self, engine: Engine, parentid: str, childid: str) -> None:
+
+        with engine.begin() as conn:
+            iobj, ilinks = self._make_insert_link_stmt(parentid, childid)
+            conn.execute(iobj)
+            conn.execute(ilinks)

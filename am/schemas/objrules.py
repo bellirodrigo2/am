@@ -4,8 +4,9 @@ from typing import Any
 
 from am.exceptions import InconsistentIdTypeError, InvalidTargetError, ObjHierarchyError
 from am.interfaces import IdInterface, TreeNodeInterface
-from am.schemas.baseclass import BaseClass
-from am.schemas.label import make_input_fields, make_update_fields
+
+# from am.schemas.baseclass import BaseClass
+from am.schemas.labelfactory import make_input_fields
 from am.schemas.objects.assetserver import AssetServer
 from am.schemas.objects.collection import Collection
 from am.schemas.objects.database import DataBase
@@ -22,7 +23,7 @@ from am.schemas.objects.user import User
 from am.schemas.objects.view import View
 from am.schemas.webid import Id
 
-Rules = tuple[type[BaseClass], bytes, tuple[str, ...]]
+Rules = tuple[type[TreeNodeInterface], bytes, tuple[str, ...]]
 
 
 @dataclass(frozen=True, slots=True)
@@ -54,7 +55,7 @@ class _GetRules:
     def _get(self, target: str) -> Rules:
         return getattr(self, target)
 
-    def get_class(self, target: str) -> type[BaseClass]:
+    def get_class(self, target: str) -> type[TreeNodeInterface]:
         return self._get(target)[0]
 
     def get_byte(self, target: str) -> bytes:
@@ -99,6 +100,7 @@ def _make_new_id(target: str) -> IdInterface:
 def check_id(target: str, id: str) -> None:
 
     _check_target_valid(target)
+
     webid = _cast_id(id=id)
     target_byte = rules.get_byte(target)
     if target_byte != webid.pref:
@@ -114,17 +116,17 @@ def check_hierarchy(target: str, child: str) -> None:
 
 
 def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
-    target_cls: type[BaseClass] = rules.get_class(target)
+    target_cls: type[TreeNodeInterface] = rules.get_class(target)
 
     new_webid = _make_new_id(target)
-    full_kwargs = make_input_fields(webid=str(new_webid), **kwargs)
+    full_kwargs = make_input_fields(webid=new_webid, **kwargs)
 
-    return target_cls(**full_kwargs)  # type: ignore
+    return target_cls(**full_kwargs)
 
 
 def _get_fields(target: str) -> set[str]:
 
-    target_cls: type[BaseClass] = rules.get_class(target)
+    target_cls: type[TreeNodeInterface] = rules.get_class(target)
 
     return set(target_cls.model_fields.keys())
 
