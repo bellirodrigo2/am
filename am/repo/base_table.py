@@ -80,8 +80,11 @@ class TableWrap:
             row = q.one()
             row_dict = row._asdict() if fields else row.__dict__
 
-            # remove type....
-            full_web_id = row["type"] + row["web_id"]
-            # build web_id from type + webid
+            row_dict["web_id"] = (
+                row_dict["type"].to_bytes(4, "little").decode("utf-8")
+                + row_dict["web_id"]
+            )
+            # iterar sobre o dict e remover todos iniciados com _
+            del row_dict["type"]
 
             return row_dict
