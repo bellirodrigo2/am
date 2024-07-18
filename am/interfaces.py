@@ -38,6 +38,9 @@ class TreeNodeInterface(VisitableInterface, Protocol):
 
     def model_dump(self) -> Mapping[str, Any]: ...
 
+    @classmethod
+    def get_fields(cls) -> Iterable[str]: ...
+
 
 class SortOrder(Enum):
     Asc = "asc"

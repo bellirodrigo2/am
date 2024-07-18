@@ -116,6 +116,7 @@ def check_hierarchy(target: str, child: str) -> None:
 
 
 def make_input_object(target: str, **kwargs: Any) -> TreeNodeInterface:
+
     target_cls: type[TreeNodeInterface] = rules.get_class(target)
 
     new_webid = _make_new_id(target)
@@ -128,15 +129,17 @@ def _get_fields(target: str) -> set[str]:
 
     target_cls: type[TreeNodeInterface] = rules.get_class(target)
 
-    return set(target_cls.model_fields.keys())
+    return set(target_cls.get_fields())
 
 
 def split_fields(target: str, *fields: str) -> tuple[set[str], set[str]]:
 
-    if not fields:
-        return _get_fields(target), set()
+    tgt_fields = _get_fields(target)
 
-    s1 = _get_fields(target)
+    if not fields:
+        return tgt_fields, set()
+
+    s1 = tgt_fields
     s2 = set(fields)
 
     return s1 & s2, s2 - s1
