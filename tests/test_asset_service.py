@@ -11,12 +11,7 @@ from pydantic import ValidationError
 
 from am.asset import CreateAsset, ReadManyAsset, ReadOneAsset
 from am.interfaces import Repository
-from am.schemas.objrules import (
-    check_hierarchy,
-    check_id,
-    make_input_object,
-    split_fields,
-)
+from am.schemas.objects import AssetEntry, make_input_object, split_fields
 
 obj_file: Path = Path.cwd() / "tests/objs.json"
 with open(file=obj_file) as f:
@@ -34,25 +29,25 @@ def repo() -> Repository:
     [
         (
             "assetserver",
-            "asse668540fb5ac420d8fc35320a",
+            "668540fb5ac420d8fc35320a",
             "database",
             inputs["databases"],
         ),
         (
             "node",
-            "node668540fb5ac420d8fc35320a",
+            "668540fb5ac420d8fc35320a",
             "view",
             inputs["views"],
         ),
         (
             "node",
-            "node668540fb5ac420d8fc35320a",
+            "668540fb5ac420d8fc35320a",
             "node",
             inputs["nodes"],
         ),
         (
             "item",
-            "item668540fb5ac420d8fc35320a",
+            "668540fb5ac420d8fc35320a",
             "item",
             inputs["items"],
         ),
@@ -67,10 +62,8 @@ async def test_create_asset_ok(
 ):
     create = CreateAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         _cast=make_input_object,
-        # _make_id=make_id,
         target=target,
         webid=webid,
         child=child,
@@ -86,11 +79,10 @@ async def test_create_asset_empty(
 ):
     create = CreateAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         _cast=make_input_object,
         target="node",
-        webid="node668540fb5ac420d8fc35320a",
+        webid="668540fb5ac420d8fc35320a",
         child="node",
     )
     res1: Mapping[str, Any] = await create({})
@@ -119,12 +111,11 @@ async def test_create_asset_wrong_field(
 ):
     create = CreateAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         _cast=make_input_object,
         # _make_id=make_id,
         target="node",
-        webid="node668540fb5ac420d8fc35320a",
+        webid="668540fb5ac420d8fc35320a",
         child="node",
     )
     with pytest.raises(expected_exception=ValidationError):
@@ -134,10 +125,10 @@ async def test_create_asset_wrong_field(
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
-        ("database", "daba668540fb5ac420d8fc35320a", "node"),
-        ("node", "node668540fb5ac420d8fc35320a", "node"),
-        ("item", "item668540fb5ac420d8fc35320a", "item"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "database"),
+        ("database", "668540fb5ac420d8fc35320a", "node"),
+        ("node", "668540fb5ac420d8fc35320a", "node"),
+        ("item", "668540fb5ac420d8fc35320a", "item"),
     ],
 )
 async def test_create_asset_nok(
@@ -148,8 +139,7 @@ async def test_create_asset_nok(
 ):
     create = CreateAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         _cast=make_input_object,
         target=target,
         webid=webid,
@@ -163,17 +153,17 @@ async def test_create_asset_nok(
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a"),
-        ("database", "daba668540fb5ac420d8fc35320a"),
-        ("keyword", "kewo668540fb5ac420d8fc35320a"),
-        ("node", "node668540fb5ac420d8fc35320a"),
-        ("item", "item668540fb5ac420d8fc35320a"),
+        ("assetserver", "668540fb5ac420d8fc35320a"),
+        ("database", "668540fb5ac420d8fc35320a"),
+        ("keyword", "668540fb5ac420d8fc35320a"),
+        ("node", "668540fb5ac420d8fc35320a"),
+        ("item", "668540fb5ac420d8fc35320a"),
     ],
 )
 async def test_readone_asset_ok(target: str, webid: str, repo: Repository):
     readone = ReadOneAsset(
         _repo=repo,
-        _check_id=check_id,
+        _validator=AssetEntry,
         _split_fields=split_fields,
         target=target,
         webid=webid,
@@ -186,17 +176,16 @@ async def test_readone_asset_ok(target: str, webid: str, repo: Repository):
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
-        ("database", "daba668540fb5ac420d8fc35320a", "node"),
-        ("node", "node668540fb5ac420d8fc35320a", "node"),
-        ("item", "item668540fb5ac420d8fc35320a", "item"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "database"),
+        ("database", "668540fb5ac420d8fc35320a", "node"),
+        ("node", "668540fb5ac420d8fc35320a", "node"),
+        ("item", "668540fb5ac420d8fc35320a", "item"),
     ],
 )
 async def test_readmany_asset_ok(target: str, webid: str, repo: Repository, child: str):
     readmany = ReadManyAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         _split_fields=split_fields,
         target=target,
         webid=webid,

@@ -53,8 +53,6 @@ class TableWrap:
         if not col_name:
             return set([self.tab])
         cols = set([getattr(self.tab, col) for col in col_name])
-        cols.add(self.tab.web_id)
-        cols.add(self.tab.type)
         return cols
 
     async def add_row(self, engine: Engine, obj: TreeNodeInterface) -> None:
@@ -62,15 +60,12 @@ class TableWrap:
         with Session(engine) as session:
 
             row = obj.model_dump()
-            row["web_id"] = row["web_id"]["bid"]
 
             db_obj = self.tab(**row)
             session.add(db_obj)
             session.commit()
 
     async def read_one(self, engine: Engine, target: str, *fields: str) -> JsonObj:
-
-        # TODO fazer as conversões de type + fid para web_id
 
         with Session(engine) as session:
 
@@ -80,11 +75,8 @@ class TableWrap:
             row = q.one()
             row_dict = row._asdict() if fields else row.__dict__
 
-            row_dict["web_id"] = (
-                row_dict["type"].to_bytes(4, "little").decode("utf-8")
-                + row_dict["web_id"]
-            )
-            # iterar sobre o dict e remover todos iniciados com _
-            del row_dict["type"]
+            def filter_row(k: str) -> bool:
+                no_keys = ("type", "fid")
+                return True if (not k.startswith("_")) and (k not in no_keys) else False
 
-            return row_dict
+            return {k: v for k, v in row_dict.items() if filter_row(k)}

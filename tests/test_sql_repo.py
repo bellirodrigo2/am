@@ -5,20 +5,14 @@ from pathlib import Path
 
 import pytest
 
+from am.asset import ReadManyAsset
+from am.exceptions import IdNotFoundError
 from am.interfaces import Repository
 from am.repo.closure import LinkTable
 from am.repo.db import bootstrap
 from am.repo.repo import SQLRepository
-from am.schemas.objrules import WebId, make_input_object
-
-
-def test_insert_link_ok(): ...
-
-
-url = "sqlite://"
-echo = False
-
-engine = bootstrap(url, echo)
+from am.schemas.entry import make_id
+from am.schemas.objects import make_input_object
 
 obj_file: Path = Path.cwd() / "tests/objs.json"
 with open(file=obj_file) as f:
@@ -28,15 +22,21 @@ with open(file=obj_file) as f:
 
 @pytest.fixture
 def repo() -> Repository:
+
+    url = "sqlite://"
+    echo = False
+
+    engine = bootstrap(url, echo)
+
     link = LinkTable()
     repo = SQLRepository(link, engine)
 
     return repo
 
 
-async def test_insert_node_ok(repo: Repository):
+async def test_insert_read_one_node_ok(repo: Repository):
 
-    parent = WebId(pref=b"asse")
+    parent = make_id()
     target = "node"
     obj1, obj2, obj3 = inputs["nodes"]
 
@@ -48,14 +48,87 @@ async def test_insert_node_ok(repo: Repository):
     await repo.create(node2, node1.web_id)
     await repo.create(node3, node1.web_id)
 
-    read = await repo.read(node1.web_id)
-    print(read)
+    read = await repo.read(target, node1.web_id)
+    assert "name" in read
+    assert "client_id" in read
+    assert "web_id" in read
+    assert "description" in read
+    assert "template" in read
+    assert "detached" in read
 
-    read2 = await repo.read(node2.web_id, "name", "type", "web_id", "description")
-    print(read2)
+    read2 = await repo.read(target, node2.web_id, "name", "web_id", "description")
+    assert "name" in read2
+    assert "client_id" not in read2
+    assert "web_id" in read2
+    assert "description" in read2
+    assert "template" not in read2
+    assert "detached" not in read2
 
-    read3 = await repo.read(node3.web_id, "name", "client_id")
-    print(read3)
+    read3 = await repo.read(target, node3.web_id, "name", "client_id")
+    assert "name" in read3
+    assert "client_id" in read3
+    assert "web_id" not in read3
+    assert "description" not in read3
+    assert "template" not in read3
+    assert "detached" not in read3
+
+
+async def test_insert_read_node_NOEXISTENT_TARGET(repo: Repository):
+
+    parent = make_id()
+    target = "node"
+    obj1, _, _ = inputs["nodes"]
+
+    make_input_object(target, **obj1)
+
+    with pytest.raises(expected_exception=AttributeError):
+        await repo.read("NOTARGET", parent)
+
+
+async def test_insert_read_node_NOOK_TARGET(repo: Repository):
+
+    parent = make_id()
+    target = "node"
+    obj1, _, _ = inputs["nodes"]
+
+    make_input_object(target, **obj1)
+
+    with pytest.raises(expected_exception=IdNotFoundError):
+        await repo.read("item", parent)
+
+
+async def test_insert_read_node_NOOK_ID(repo: Repository):
+
+    parent = make_id()
+    target = "node"
+
+    with pytest.raises(expected_exception=IdNotFoundError):
+        await repo.read(target, parent)
+
+
+async def test_insert_read_many_node_ok(repo: Repository):
+
+    parent = make_id()
+    target = "node"
+    obj1, obj2, obj3 = inputs["nodes"]
+
+    node1 = make_input_object(target, **obj1)
+    node2 = make_input_object(target, **obj2)
+    node3 = make_input_object(target, **obj3)
+
+    await repo.create(node1, parent)
+    await repo.create(node2, node1.web_id)
+    await repo.create(node3, node1.web_id)
+
+    options = ReadManyAsset.ReadAllOptions()
+    objs = await repo.list(target, node1.web_id, options)
+    for o in objs:
+        print(o)
+    print(f"\n {parent}-{node1.web_id}-{node2.web_id}-{node3.web_id}")
+    repo.print()
+
+    # se tiver o parent id mas ele nao tiver child....retornar vazio
+    # se o parent nao existir ...raise erro
 
 
 # with Session(engine) as session:

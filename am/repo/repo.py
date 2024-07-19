@@ -1,10 +1,12 @@
+from collections.abc import Iterable
 from dataclasses import dataclass, field
 from functools import partial
 
 from sqlalchemy import Engine
-from sqlalchemy.orm import Session
+from sqlalchemy.exc import NoResultFound
 
-from am.interfaces import IdInterface, JsonObj, TreeNodeInterface
+from am.exceptions import IdNotFoundError
+from am.interfaces import JsonObj, ReadAllOptionsInterface, TreeNodeInterface
 from am.repo.base_table import TableWrap
 from am.repo.closure import LinkTable
 from am.repo.tables.item import Item
@@ -20,9 +22,7 @@ class _GetTable:
     node: TableWrap = field(default_factory=NodeTable)
     item: TableWrap = field(default_factory=ItemTable)
 
-    def get(self, id: IdInterface) -> TableWrap:
-
-        target = str(id.pref.decode("utf-8"))
+    def get_table(self, target: str) -> TableWrap:
         return getattr(self, target)
 
 
@@ -35,18 +35,43 @@ class SQLRepository:
     _closure: LinkTable
     _engine: Engine
 
-    async def create(self, obj: TreeNodeInterface, parent: IdInterface) -> None:
+    def _get_table(self, target: str) -> TableWrap:
+        return table_getter.get_table(target)
+
+    async def create(self, obj: TreeNodeInterface, parent_id: str) -> None:
 
         # TODO special case se obj for um template
-        obj_table: TableWrap = table_getter.get(id=obj.web_id)
+        obj_table: TableWrap = self._get_table(target=obj.__class__.__name__.lower())
 
         await obj_table.add_row(engine=self._engine, obj=obj)
         await self._closure.insert_link(
-            engine=self._engine, parentid=parent.bid, childid=obj.web_id.bid
+            engine=self._engine, parentid=parent_id, childid=obj.web_id
         )
 
-    async def read(self, target_id: IdInterface, *fields: str) -> JsonObj:
+    async def read(self, target: str, id: str, *fields: str) -> JsonObj:
 
-        obj_table: TableWrap = table_getter.get(target_id)
+        obj_table: TableWrap = self._get_table(target)
 
-        return await obj_table.read_one(self._engine, target_id.bid, *fields)
+        try:
+            return await obj_table.read_one(self._engine, id, *fields)
+        except NoResultFound:
+            raise IdNotFoundError(id)
+
+    async def list(
+        self, target: str, id: str, options: ReadAllOptionsInterface
+    ) -> Iterable[JsonObj]:
+
+        obj_table: TableWrap = self._get_table(target)
+        cols = obj_table.get_cols(options.selected_fields)
+
+        return await self._closure.select_descendants(
+            self._engine, obj_table, id, options.search_full_hierarchy, cols
+        )
+
+    def print(self):
+        self._closure.print(self._engine)
+
+    # field_filter: Mapping[field, str] | None
+    # field_filter_like: Mapping[field, str] | None
+    # sort_options: tuple[tuple[field, SortOrder], ...] | None
+    # pag_options: tuple[start, max] | None

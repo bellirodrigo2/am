@@ -3,17 +3,11 @@
 from unittest.mock import MagicMock
 
 import pytest
-from pydantic import ValidationError
 
 from am.asset import _TargetAsset, _TargetChildAsset  # type: ignore
-from am.exceptions import (
-    InconsistentIdTypeError,
-    InvalidIdError,
-    InvalidTargetError,
-    ObjHierarchyError,
-)
+from am.exceptions import InvalidIdError, InvalidTargetError
 from am.interfaces import Repository
-from am.schemas.objrules import check_hierarchy, check_id
+from am.schemas.objects import AssetEntry
 
 
 @pytest.fixture
@@ -24,21 +18,21 @@ def repo() -> Repository:
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a"),
-        ("dataserver", "dase668540fb5ac420d8fc35320a"),
-        ("enumset", "enum668540fb5ac420d8fc35320a"),
-        ("database", "daba668540fb5ac420d8fc35320a"),
-        ("keyword", "kewo668540fb5ac420d8fc35320a"),
-        ("view", "view668540fb5ac420d8fc35320a"),
-        ("node", "node668540fb5ac420d8fc35320a"),
-        ("templatenode", "teno668540fb5ac420d8fc35320a"),
-        ("item", "item668540fb5ac420d8fc35320a"),
+        ("assetserver", "668540fb5ac420d8fc35320a"),
+        ("dataserver", "668540fb5ac420d8fc35320a"),
+        ("enumset", "668540fb5ac420d8fc35320a"),
+        ("database", "668540fb5ac420d8fc35320a"),
+        ("keyword", "668540fb5ac420d8fc35320a"),
+        ("view", "668540fb5ac420d8fc35320a"),
+        ("node", "668540fb5ac420d8fc35320a"),
+        ("templatenode", "668540fb5ac420d8fc35320a"),
+        ("item", "668540fb5ac420d8fc35320a"),
     ],
 )
 def test_target_asset_ok(target: str, webid: str, repo: Repository):
     _TargetAsset(
         _repo=repo,
-        _check_id=check_id,
+        _validator=AssetEntry,
         target=target,
         webid=webid,
     )
@@ -47,8 +41,8 @@ def test_target_asset_ok(target: str, webid: str, repo: Repository):
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("notarget", "daba668540fb5ac420d8fc35320a"),
-        ("nochild", "daba668540fb5ac420d8fc35320a"),
+        ("notarget", "668540fb5ac420d8fc35320a"),
+        ("nochild", "668540fb5ac420d8fc35320a"),
     ],
 )
 def test_target_asset_invalid_target_nok(target: str, webid: str, repo: Repository):
@@ -56,7 +50,7 @@ def test_target_asset_invalid_target_nok(target: str, webid: str, repo: Reposito
     with pytest.raises(expected_exception=InvalidTargetError):
         _TargetAsset(
             _repo=repo,
-            _check_id=check_id,
+            _validator=AssetEntry,
             target=target,
             webid=webid,
         )
@@ -65,60 +59,18 @@ def test_target_asset_invalid_target_nok(target: str, webid: str, repo: Reposito
 @pytest.mark.parametrize(
     "target, webid",
     [
-        ("database", "base668540fb5ac420d8fc35320a"),
-        ("keyword", "root668540fb5ac420d8fc35320a"),
-    ],
-)
-def test_target_asset_invalid_pref_nok(target: str, webid: str, repo: Repository):
-
-    with pytest.raises(expected_exception=InvalidIdError):
-        _TargetAsset(
-            _repo=repo,
-            _check_id=check_id,
-            target=target,
-            webid=webid,
-        )
-
-
-@pytest.mark.parametrize(
-    "target, webid",
-    [
-        ("assetserver", "asse668540fb5xxxxac420d8fc35320a"),
-        ("item", "item668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
-        ("view", "view66820a"),
-        ("node", "node6685XX"),
+        ("assetserver", "668540fb5xxxxac420d8fc35320a"),
+        ("item", "668540fb5ac42FFFFFFFFFFFFFFF0d8fc35320a"),
+        ("view", "66820a"),
+        ("node", "6685XX"),
     ],
 )
 def test_target_asset_invalid_bid_nok(target: str, webid: str, repo: Repository):
 
-    with pytest.raises(expected_exception=ValidationError):
+    with pytest.raises(expected_exception=InvalidIdError):
         _TargetAsset(
             _repo=repo,
-            _check_id=check_id,
-            target=target,
-            webid=webid,
-        )
-
-
-@pytest.mark.parametrize(
-    "target, webid",
-    [
-        ("assetserver", "node668540fb5ac420d8fc35320a"),
-        ("database", "asse668540fb5ac420d8fc35320a"),
-        ("view", "item668540fb5ac420d8fc35320a"),
-        ("node", "dase668540fb5ac420d8fc35320a"),
-        ("item", "node668540fb5ac420d8fc35320a"),
-        ("templatenode", "node668540fb5ac420d8fc35320a"),
-        ("enumset", "daba668540fb5ac420d8fc35320a"),
-        ("point", "asse668540fb5ac420d8fc35320a"),
-    ],
-)
-def test_target_asset_inconsistentid_nok(target: str, webid: str, repo: Repository):
-
-    with pytest.raises(expected_exception=InconsistentIdTypeError):
-        _TargetAsset(
-            _repo=repo,
-            _check_id=check_id,
+            _validator=AssetEntry,
             target=target,
             webid=webid,
         )
@@ -127,22 +79,21 @@ def test_target_asset_inconsistentid_nok(target: str, webid: str, repo: Reposito
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "database"),
-        ("dataserver", "dase668540fb5ac420d8fc35320a", "point"),
-        ("database", "daba668540fb5ac420d8fc35320a", "node"),
-        ("node", "node668540fb5ac420d8fc35320a", "node"),
-        ("node", "node668540fb5ac420d8fc35320a", "item"),
-        ("item", "item668540fb5ac420d8fc35320a", "item"),
-        ("item", "item668540fb5ac420d8fc35320a", "view"),
-        ("node", "node668540fb5ac420d8fc35320a", "view"),
-        ("database", "daba668540fb5ac420d8fc35320a", "enumset"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "database"),
+        ("dataserver", "668540fb5ac420d8fc35320a", "point"),
+        ("database", "668540fb5ac420d8fc35320a", "node"),
+        ("node", "668540fb5ac420d8fc35320a", "node"),
+        ("node", "668540fb5ac420d8fc35320a", "item"),
+        ("item", "668540fb5ac420d8fc35320a", "item"),
+        ("item", "668540fb5ac420d8fc35320a", "view"),
+        ("node", "668540fb5ac420d8fc35320a", "view"),
+        ("database", "668540fb5ac420d8fc35320a", "enumset"),
     ],
 )
 def test_parent_asset_ok(target: str, webid: str, repo: Repository, child: str):
     _TargetChildAsset(
         _repo=repo,
-        _check_id=check_id,
-        _check_hierarchy=check_hierarchy,
+        _validator=AssetEntry,
         target=target,
         webid=webid,
         child=child,
@@ -152,9 +103,9 @@ def test_parent_asset_ok(target: str, webid: str, repo: Repository, child: str):
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "nochild"),
-        ("dataserver", "dase668540fb5ac420d8fc35320a", "noexist"),
-        ("database", "daba668540fb5ac420d8fc35320a", "foobar"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "nochild"),
+        ("dataserver", "668540fb5ac420d8fc35320a", "noexist"),
+        ("database", "668540fb5ac420d8fc35320a", "foobar"),
     ],
 )
 def test_parent_asset_invalid_child_nok(
@@ -164,8 +115,7 @@ def test_parent_asset_invalid_child_nok(
     with pytest.raises(expected_exception=InvalidTargetError):
         _TargetChildAsset(
             _repo=repo,
-            _check_id=check_id,
-            _check_hierarchy=check_hierarchy,
+            _validator=AssetEntry,
             target=target,
             webid=webid,
             child=child,
@@ -175,27 +125,26 @@ def test_parent_asset_invalid_child_nok(
 @pytest.mark.parametrize(
     "target, webid, child",
     [
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "item"),
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "point"),
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "node"),
-        ("dataserver", "dase668540fb5ac420d8fc35320a", "database"),
-        ("dataserver", "dase668540fb5ac420d8fc35320a", "view"),
-        ("database", "daba668540fb5ac420d8fc35320a", "assetserver"),
-        ("database", "daba668540fb5ac420d8fc35320a", "point"),
-        ("database", "daba668540fb5ac420d8fc35320a", "keyword"),
-        ("node", "node668540fb5ac420d8fc35320a", "database"),
-        ("item", "item668540fb5ac420d8fc35320a", "node"),
-        ("database", "daba668540fb5ac420d8fc35320a", "view"),
-        ("assetserver", "asse668540fb5ac420d8fc35320a", "enumset"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "item"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "point"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "node"),
+        ("dataserver", "668540fb5ac420d8fc35320a", "database"),
+        ("dataserver", "668540fb5ac420d8fc35320a", "view"),
+        ("database", "668540fb5ac420d8fc35320a", "assetserver"),
+        ("database", "668540fb5ac420d8fc35320a", "point"),
+        ("database", "668540fb5ac420d8fc35320a", "keyword"),
+        ("node", "668540fb5ac420d8fc35320a", "database"),
+        ("item", "668540fb5ac420d8fc35320a", "node"),
+        ("database", "668540fb5ac420d8fc35320a", "view"),
+        ("assetserver", "668540fb5ac420d8fc35320a", "enumset"),
     ],
 )
 def test_parent_asset_nok(target: str, webid: str, repo: Repository, child: str):
 
-    with pytest.raises(expected_exception=ObjHierarchyError):
+    with pytest.raises(expected_exception=InvalidTargetError):
         _TargetChildAsset(
             _repo=repo,
-            _check_id=check_id,
-            _check_hierarchy=check_hierarchy,
+            _validator=AssetEntry,
             target=target,
             webid=webid,
             child=child,
